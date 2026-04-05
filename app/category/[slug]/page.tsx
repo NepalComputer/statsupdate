@@ -1,0 +1,67 @@
+// app/category/[slug]/page.tsx
+import { client } from '@/sanity/client'
+import Image from 'next/image'
+import Link from 'next/link'
+import { urlFor } from '@/lib/sanity'
+import { Card, CardContent } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { notFound } from 'next/navigation'
+
+const categoryLabels: Record<string, string> = {
+  sports: 'Sports',
+  politics: 'Politics',
+  'pop-culture': 'Pop Culture',
+}
+
+async function getCategoryPosts(category: string) {
+  const query = `*[_type == "post" && category == $category] | order(publishedAt desc) {
+    _id, title, slug, category, excerpt, featuredImage, publishedAt
+  }`
+
+  return client.fetch(query, { category }, { next: { revalidate: 60 } })
+}
+
+export default async function CategoryPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params
+  const posts = await getCategoryPosts(slug)
+  const categoryName = categoryLabels[slug] || slug
+
+  if (posts.length === 0) notFound()
+
+  return (
+    <main className="min-h-screen bg-gray-50 py-12">
+      <div className="max-w-6xl mx-auto px-6">
+        <div className="mb-12">
+          <h1 className="text-5xl font-bold tracking-tight">{categoryName}</h1>
+          <p className="text-xl text-gray-600 mt-3">Latest stories in {categoryName.toLowerCase()}</p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {posts.map((post: any) => (
+            <Card key={post._id} className="overflow-hidden hover:shadow-xl transition">
+              {post.featuredImage && (
+                <div className="relative aspect-[16/10]">
+                  <Image
+                    src={urlFor(post.featuredImage).width(700).auto('format').url()}
+                    alt={post.title}
+                    fill
+                    className="object-cover"
+                  />
+                </div>
+              )}
+              <CardContent className="p-6">
+                <Badge className="mb-3">{categoryName}</Badge>
+                <Link href={`/${post.slug.current}`}>
+                  <h3 className="text-2xl font-semibold line-clamp-3 mb-4 hover:text-blue-600">
+                    {post.title}
+                  </h3>
+                </Link>
+                {post.excerpt && <p className="text-gray-600 line-clamp-3">{post.excerpt}</p>}
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    </main>
+  )
+}
