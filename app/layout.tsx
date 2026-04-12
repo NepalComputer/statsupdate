@@ -72,6 +72,7 @@ export default function RootLayout({
             gtag('config', 'G-T9LB8PNTES');
           `}
         </Script>
+        <meta name="google-adsense-account" content="ca-pub-5943753257510158"></meta>
       </head>
       <body className="min-h-full flex flex-col bg-[var(--background)] text-[var(--foreground)]">
         <Navbar />
