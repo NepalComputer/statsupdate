@@ -2,49 +2,24 @@
 import { client } from '@/sanity/client'
 import { urlFor } from '@/lib/sanity'
 import Image from 'next/image'
-import PortableText from '@/components/PortableText'
+import { PortableText } from '@portabletext/react'
 import { notFound } from 'next/navigation'
 import { Calendar, Clock, ArrowLeft } from 'lucide-react'
 import { ShareButton, BookmarkButton } from '@/components/ShareButton'
 import Link from 'next/link'
+import QuizBlock from '@/components/QuizBlock'   // ← Import the Quiz component
 
 interface Post {
   _id: string
   title: string
   slug: { current: string }
   category: string
-  featuredImage?: {
-    _type: string
-    asset: {
-      _ref: string
-      _type: string
-    }
-    hotspot?: {
-      x: number
-      y: number
-      height: number
-      width: number
-    }
-  }
+  featuredImage?: any
   excerpt?: string
-  body: {
-    _type: string
-    children: Array<{
-      _type: string
-      text: string
-      marks?: string[]
-    }>
-    markDefs?: Array<{
-      _key: string
-      _type: string
-      href?: string
-    }>
-    style?: string
-  }[]
+  body: any[]                     // Portable Text array
   publishedAt: string
   seoTitle?: string
   seoDescription?: string
-  author?: string
 }
 
 async function getPost(slug: string): Promise<Post | null> {
@@ -76,7 +51,7 @@ function getCategoryStyle(category: string): string {
 }
 
 function formatCategory(category: string): string {
-  return category.replace('-', ' ')
+  return category.replace('-', ' ').toUpperCase()
 }
 
 export default async function ArticlePage({ params }: { params: Promise<{ slug: string }> }) {
@@ -90,6 +65,45 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
 
   const shareUrl = `/${post.slug.current}`
   const shareTitle = post.title
+
+  // Custom components for PortableText
+  const portableComponents = {
+    types: {
+      // Render Quiz Block
+      quiz: ({ value }: any) => {
+        if (!value) return null
+        return (
+          <QuizBlock
+            title={value.title}
+            description={value.description}
+            questions={value.questions || []}
+          />
+        )
+      },
+
+      // Optional: Better image rendering inside body
+      image: ({ value }: any) => {
+        if (!value?.asset) return null
+        return (
+          <div className="my-10">
+            <Image
+              src={urlFor(value).width(800).auto('format').quality(85).url()}
+              alt={value.alt || 'Article image'}
+              width={800}
+              height={500}
+              className="rounded-2xl w-full object-cover"
+            />
+          </div>
+        )
+      },
+    },
+
+    block: {
+      normal: ({ children }: any) => <p className="mb-6 leading-relaxed">{children}</p>,
+      h2: ({ children }: any) => <h2 className="text-3xl font-bold mt-12 mb-6">{children}</h2>,
+      h3: ({ children }: any) => <h3 className="text-2xl font-semibold mt-10 mb-4">{children}</h3>,
+    },
+  }
 
   return (
     <article className="bg-white">
@@ -108,9 +122,9 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
 
       {/* Article Header */}
       <header className="max-w-4xl mx-auto px-4 md:px-6 py-8 md:py-12">
-        <div className="flex items-center gap-4 mb-6">
-          <span className={`category-badge ${getCategoryStyle(post.category)}`}>
-            {formatCategory(post.category).toUpperCase()}
+        <div className="flex items-center gap-4 mb-6 flex-wrap">
+          <span className={`category-badge ${getCategoryStyle(post.category)} px-4 py-1 rounded-full text-sm font-medium`}>
+            {formatCategory(post.category)}
           </span>
           <span className="text-gray-500 text-sm flex items-center gap-1.5">
             <Calendar className="w-4 h-4" />
@@ -138,6 +152,7 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
         )}
       </header>
 
+      {/* Featured Image */}
       {post.featuredImage && (
         <div className="max-w-5xl mx-auto px-4 md:px-6 mb-12">
           <div className="relative aspect-[16/9] md:aspect-[21/9] rounded-xl overflow-hidden">
@@ -155,16 +170,13 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
               sizes="(max-width: 1200px) 100vw, 1200px"
             />
           </div>
-          <p className="text-sm text-gray-500 mt-3 text-center">
-            Image credit: StatsUpdate
-          </p>
         </div>
       )}
 
       {/* Article Body */}
       <div className="max-w-3xl mx-auto px-4 md:px-6 pb-16">
         {/* Share & Bookmark */}
-        <div className="flex items-center justify-between py-6 border-y border-gray-100 mb-8">
+        <div className="flex items-center justify-between py-6 border-y border-gray-100 mb-10">
           <div className="flex items-center gap-4">
             <ShareButton title={shareTitle} url={shareUrl} />
             <BookmarkButton />
@@ -175,13 +187,16 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
           </div>
         </div>
 
-        {/* Content */}
+        {/* Main Content with Quiz Support */}
         <div className="prose-news">
-          <PortableText value={post.body} />
+          <PortableText 
+            value={post.body} 
+            components={portableComponents} 
+          />
         </div>
 
         {/* Tags */}
-        <div className="mt-12 pt-8 border-t border-gray-100">
+        <div className="mt-16 pt-8 border-t border-gray-100">
           <div className="flex flex-wrap gap-2">
             <span className="text-sm text-gray-500 mr-2">Tags:</span>
             <Link 
