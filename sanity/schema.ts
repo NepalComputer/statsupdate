@@ -1,7 +1,7 @@
 import { type SchemaTypeDefinition } from 'sanity'
 
 export const schemaTypes: SchemaTypeDefinition[] = [
-  // First, add the Author document type
+  // Author Document
   {
     name: 'author',
     title: 'Author',
@@ -39,7 +39,7 @@ export const schemaTypes: SchemaTypeDefinition[] = [
     ],
   },
 
-  // Updated Post type with authors (array - future-proof)
+  // Post Document - Main Article Type
   {
     name: 'post',
     title: 'Post',
@@ -93,7 +93,16 @@ export const schemaTypes: SchemaTypeDefinition[] = [
         name: 'body',
         title: 'Body',
         type: 'array',
-        of: [{ type: 'block' }],
+        of: [
+          { type: 'block' },                    // Normal rich text (paragraphs, headings, lists, etc.)
+          { 
+            type: 'image', 
+            options: { hotspot: true } 
+          },                                    // Inline images
+          { 
+            type: 'quiz'                          // ← New Interactive Quiz Block
+          },
+        ],
       },
       {
         name: 'publishedAt',
@@ -110,6 +119,61 @@ export const schemaTypes: SchemaTypeDefinition[] = [
         title: 'SEO Description',
         type: 'text',
         rows: 2,
+      },
+    ],
+  },
+
+  // Quiz Block Definition (Reusable Object)
+  {
+    name: 'quiz',
+    title: 'Quiz',
+    type: 'object',
+    fields: [
+      {
+        name: 'title',
+        title: 'Quiz Title',
+        type: 'string',
+        validation: (Rule) => Rule.required(),
+      },
+      {
+        name: 'description',
+        title: 'Short Description (optional)',
+        type: 'text',
+        rows: 2,
+      },
+      {
+        name: 'questions',
+        title: 'Questions',
+        type: 'array',
+        of: [
+          {
+            type: 'object',
+            name: 'question',
+            title: 'Question',
+            fields: [
+              {
+                name: 'questionText',
+                title: 'Question Text',
+                type: 'string',
+                validation: (Rule) => Rule.required(),
+              },
+              {
+                name: 'options',
+                title: 'Answer Options',
+                type: 'array',
+                of: [{ type: 'string' }],
+                validation: (Rule) => Rule.min(2).max(4).required(),
+              },
+              {
+                name: 'correctIndex',
+                title: 'Correct Answer Index (starts from 0)',
+                type: 'number',
+                validation: (Rule) => Rule.required().min(0),
+              },
+            ],
+          },
+        ],
+        validation: (Rule) => Rule.min(1),
       },
     ],
   },
