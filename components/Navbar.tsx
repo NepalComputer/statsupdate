@@ -2,23 +2,24 @@
 'use client'
 
 import Link from 'next/link'
-import { Menu, Search, TrendingUp, Menu as MenuIcon } from 'lucide-react'
+import { Search, TrendingUp, Menu as MenuIcon, X } from 'lucide-react'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
 import { Button } from '@/components/ui/button'
 import { useState, useEffect } from 'react'
 
 const categories = [
-  { label: 'Sports', value: 'sports', color: 'text-orange-600' },
-  { label: 'Politics', value: 'politics', color: 'text-red-600' },
-  { label: 'Pop Culture', value: 'pop-culture', color: 'text-purple-600' },
+  { label: 'Sports', value: 'sports' },
+  { label: 'Politics', value: 'politics' },
+  { label: 'Pop Culture', value: 'pop-culture' },
 ]
 
 function Navbar() {
   const [scrolled, setScrolled] = useState(false)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   useEffect(() => {
     const handleScroll = () => {
-      setScrolled(window.scrollY > 10)
+      setScrolled(window.scrollY > 20)
     }
     window.addEventListener('scroll', handleScroll)
     return () => window.removeEventListener('scroll', handleScroll)
@@ -26,54 +27,48 @@ function Navbar() {
 
   return (
     <>
-      {/* Top Bar */}
-      <div className="hidden md:block bg-news-dark text-white text-xs py-2">
-        <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <span className="text-gray-400">Friday, April 4, 2026</span>
-            <span className="text-gray-600">|</span>
-            <span className="text-gray-300">New York 72°F</span>
-          </div>
-          <div className="flex items-center gap-4">
-            <Link href="/about" className="hover:text-white text-gray-400 transition-colors">About</Link>
-            <Link href="/contact" className="hover:text-white text-gray-400 transition-colors">Contact</Link>
-            <Link href="/newsletter" className="hover:text-white text-gray-400 transition-colors">Newsletter</Link>
-          </div>
-        </div>
-      </div>
-
       {/* Main Navigation */}
-      <header 
-        className={`sticky top-0 z-50 bg-white transition-shadow duration-300 ${
-          scrolled ? 'navbar-shadow' : 'border-b border-gray-100'
+      <header
+        className={`sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-slate-200/50 transition-all duration-500 ${
+          scrolled ? 'bg-white/90 shadow-lg shadow-slate-900/5' : ''
         }`}
       >
         <div className="max-w-7xl mx-auto px-4 md:px-6">
-          <div className="flex items-center justify-between h-16 md:h-20">
+          <div className="flex items-center h-20">
             {/* Mobile Menu */}
             <div className="md:hidden">
-              <Sheet>
+              <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
                 <SheetTrigger asChild>
-                  <Button variant="ghost" size="icon" className="text-news-dark">
+                  <Button variant="ghost" size="icon" className="text-gray-900 hover:bg-gray-50">
                     <MenuIcon className="w-5 h-5" />
                   </Button>
                 </SheetTrigger>
-                <SheetContent side="left" className="w-[300px]">
-                  <div className="flex flex-col gap-6 mt-8">
-                    <Link href="/" className="text-2xl font-heading font-bold text-news-dark">
-                      StatsUpdate
-                    </Link>
-                    <nav className="flex flex-col gap-4 text-base">
+                <SheetContent side="left" className="w-[320px] p-4">
+                  <div className="flex flex-col h-full">
+                    <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+                      <Link href="/" className="text-xl font-heading font-bold text-gray-900" onClick={() => setMobileMenuOpen(false)}>
+                        StatsUpdate
+                      </Link>
+                      <Button variant="ghost" size="icon" onClick={() => setMobileMenuOpen(false)}>
+                        <X className="w-5 h-5" />
+                      </Button>
+                    </div>
+                    <nav className="flex flex-col p-6 gap-3">
                       {categories.map((cat) => (
                         <Link
                           key={cat.value}
                           href={`/category/${cat.value}`}
-                          className={`font-medium hover:${cat.color} transition-colors`}
+                          className="block px-4 py-3 rounded-xl text-sm font-medium text-slate-700 hover:bg-gradient-to-r hover:from-indigo-50 hover:to-purple-50 hover:text-indigo-700 transition-all duration-300 hover:translate-x-2"
+                          onClick={() => setMobileMenuOpen(false)}
                         >
                           {cat.label}
                         </Link>
                       ))}
-                      <Link href="/search" className="font-medium hover:text-news-blue transition-colors">
+                      <Link
+                        href="/search"
+                        className="block px-4 py-3 rounded-xl text-sm font-medium text-slate-700 hover:bg-gradient-to-r hover:from-indigo-50 hover:to-purple-50 hover:text-indigo-700 transition-all duration-300 hover:translate-x-2"
+                        onClick={() => setMobileMenuOpen(false)}
+                      >
                         Search
                       </Link>
                     </nav>
@@ -83,44 +78,42 @@ function Navbar() {
             </div>
 
             {/* Logo */}
-            <Link href="/" className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-news-accent flex items-center justify-center">
+            <Link href="/" className="flex items-center gap-3 group mr-8">
+              <div className="w-10 h-10 flex items-center justify-center bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl shadow-lg shadow-indigo-500/25 group-hover:shadow-indigo-500/40 transition-all duration-300 group-hover:scale-110">
                 <TrendingUp className="w-5 h-5 text-white" />
               </div>
-              <span className="text-xl md:text-2xl font-heading font-bold text-news-dark tracking-tight">
+              <span className="text-xl font-heading font-bold text-slate-900 group-hover:text-indigo-600 transition-colors duration-300">
                 StatsUpdate
               </span>
             </Link>
 
-            {/* Desktop Navigation */}
-            <nav className="hidden md:flex items-center gap-8">
+            {/* Desktop Navigation - Centered */}
+            <nav className="hidden md:flex md:flex-1 md:justify-center md:items-center md:space-x-8">
               {categories.map((cat) => (
                 <Link
                   key={cat.value}
                   href={`/category/${cat.value}`}
-                  className={`text-sm font-medium hover:${cat.color} transition-colors relative group`}
+                  className="relative text-sm font-medium text-slate-600 hover:text-slate-900 transition-all duration-300 hover:scale-105 before:absolute before:bottom-0 before:left-0 before:w-0 before:h-0.5 before:bg-gradient-to-r before:from-indigo-500 before:to-purple-600 before:transition-all before:duration-300 hover:before:w-full"
                 >
                   {cat.label}
-                  <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-current transition-all group-hover:w-full" />
                 </Link>
               ))}
             </nav>
 
-            {/* Search Button */}
-            <div className="flex items-center gap-3">
+            {/* Actions */}
+            <div className="flex items-center gap-4">
               <Link href="/search">
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className="text-gray-500 hover:text-news-dark hover:bg-gray-100"
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="text-slate-500 hover:text-slate-900 hover:bg-slate-100/50 backdrop-blur-sm rounded-xl transition-all duration-300 hover:scale-110"
                 >
                   <Search className="w-5 h-5" />
                 </Button>
               </Link>
-              <Link href="/search" className="hidden lg:block">
-                <Button 
-                  variant="outline" 
-                  className="text-sm font-medium bg-news-dark hover:bg-news-dark/90 text-white border-news-dark"
+              <Link href="/newsletter">
+                <Button
+                  className="text-sm font-medium text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 px-6 py-2.5 rounded-xl shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 transition-all duration-300 hover:scale-105 hover:shadow-xl"
                 >
                   Subscribe
                 </Button>
@@ -129,26 +122,6 @@ function Navbar() {
           </div>
         </div>
       </header>
-
-      {/* Category Bar */}
-      <div className="hidden md:block border-b border-gray-100 bg-white">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="flex items-center gap-6 h-10 text-xs">
-            <span className="text-gray-400 font-medium">TRENDING:</span>
-            <Link href="/arjun-kumal-becomes-fastest-1000-runs" className="text-news-dark hover:text-news-accent transition-colors font-medium">
-              Arjun Kumal fastest 1000 runs
-            </Link>
-            <span className="text-gray-300">|</span>
-            <Link href="/election-2026" className="text-news-dark hover:text-news-accent transition-colors font-medium">
-              Election 2026
-            </Link>
-            <span className="text-gray-300">|</span>
-            <Link href="/bollywood-awards" className="text-news-dark hover:text-news-accent transition-colors font-medium">
-              Bollywood Awards
-            </Link>
-          </div>
-        </div>
-      </div>
     </>
   )
 }

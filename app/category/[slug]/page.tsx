@@ -7,13 +7,35 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { notFound } from 'next/navigation'
 
+interface CategoryPost {
+  _id: string
+  title: string
+  slug: { current: string }
+  category: string
+  excerpt?: string
+  featuredImage?: {
+    _type: string
+    asset: {
+      _ref: string
+      _type: string
+    }
+    hotspot?: {
+      x: number
+      y: number
+      height: number
+      width: number
+    }
+  }
+  publishedAt: string
+}
+
 const categoryLabels: Record<string, string> = {
   sports: 'Sports',
   politics: 'Politics',
   'pop-culture': 'Pop Culture',
 }
 
-async function getCategoryPosts(category: string) {
+async function getCategoryPosts(category: string): Promise<CategoryPost[]> {
   const query = `*[_type == "post" && category == $category] | order(publishedAt desc) {
     _id, title, slug, category, excerpt, featuredImage, publishedAt
   }`
@@ -37,7 +59,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {posts.map((post: any) => (
+          {posts.map((post: CategoryPost) => (
             <Card key={post._id} className="overflow-hidden hover:shadow-xl transition">
               {post.featuredImage && (
                 <div className="relative aspect-[16/10]">

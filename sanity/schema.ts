@@ -1,4 +1,4 @@
-import { type SchemaTypeDefinition, defineType, defineField } from 'sanity'
+import { type SchemaTypeDefinition } from 'sanity'
 
 export const schemaTypes: SchemaTypeDefinition[] = [
   // First, add the Author document type

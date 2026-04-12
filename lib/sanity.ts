@@ -10,6 +10,26 @@ export const client = createClient({
 
 const builder = imageUrlBuilder(client)
 
-export function urlFor(source: any) {
+interface SanityImageSource {
+  _type: string
+  asset: {
+    _ref: string
+    _type: string
+  }
+  hotspot?: {
+    x: number
+    y: number
+    height: number
+    width: number
+  }
+  crop?: {
+    top: number
+    bottom: number
+    left: number
+    right: number
+  }
+}
+
+export function urlFor(source: SanityImageSource) {
   return builder.image(source)
 }

@@ -3,9 +3,7 @@ import { client } from '@/sanity/client'
 import Image from 'next/image'
 import Link from 'next/link'
 import { urlFor } from '@/lib/sanity'
-import { Card, CardContent } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Calendar, Clock, ArrowRight, TrendingUp, Play, Zap, Star, Quote } from 'lucide-react'
+import { Calendar, Clock, Star, Quote, ChevronRight, TrendingUp } from 'lucide-react'
 
 interface Post {
   _id: string
@@ -13,9 +11,34 @@ interface Post {
   slug: { current: string }
   category: string
   excerpt?: string
-  featuredImage?: any
+  featuredImage?: {
+    _type: string
+    asset: {
+      _ref: string
+      _type: string
+    }
+    hotspot?: {
+      x: number
+      y: number
+      height: number
+      width: number
+    }
+  }
   publishedAt: string
-  body?: any[]
+  body?: {
+    _type: string
+    children: Array<{
+      _type: string
+      text: string
+      marks?: string[]
+    }>
+    markDefs?: Array<{
+      _key: string
+      _type: string
+      href?: string
+    }>
+    style?: string
+  }[]
   readTime?: number
 }
 
@@ -36,35 +59,13 @@ async function getPosts(): Promise<Post[]> {
   })
 }
 
-function getCategoryStyle(category: string): string {
-  const styles: Record<string, string> = {
-    sports: 'category-sports',
-    politics: 'category-politics',
-    'pop-culture': 'category-pop-culture',
-  }
-  return styles[category] || 'bg-gray-100 text-gray-700 border border-gray-200'
-}
-
-function formatCategory(category: string): string {
-  return category.replace('-', ' ')
-}
-
 function getCategoryLabel(category: string): string {
   const labels: Record<string, string> = {
-    sports: 'SPORTS',
-    politics: 'POLITICS',
-    'pop-culture': 'POP CULTURE',
+    sports: 'Sports',
+    politics: 'Politics',
+    'pop-culture': 'Pop Culture',
   }
-  return labels[category] || category.toUpperCase()
-}
-
-function getCategoryColor(category: string): string {
-  const colors: Record<string, string> = {
-    sports: 'bg-orange-500',
-    politics: 'bg-red-600',
-    'pop-culture': 'bg-purple-600',
-  }
-  return colors[category] || 'bg-gray-600'
+  return labels[category] || category
 }
 
 export default async function Home() {
@@ -75,79 +76,87 @@ export default async function Home() {
   const editorPick = posts.find(p => p.category === 'politics') || posts[0]
 
   return (
-    <div className="bg-white min-h-screen">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-white">
       {/* Breaking News Banner */}
-      <div className="bg-news-accent text-white py-2.5">
-        <div className="max-w-7xl mx-auto px-4 md:px-6 flex items-center gap-4">
-          <span className="flex items-center gap-1.5 font-bold text-sm uppercase tracking-wider">
-            <Zap className="w-4 h-4" /> Breaking
-          </span>
-          <div className="flex-1 overflow-hidden">
-            <div className="flex animate-marquee whitespace-nowrap">
-              <Link href="#" className="text-sm hover:underline mr-8">
-                Election 2026: Latest updates from the campaign trail
-              </Link>
-              <Link href="#" className="text-sm hover:underline mr-8">
-                Arjun Kumal makes history with fastest 1000 runs
-              </Link>
-              <Link href="#" className="text-sm hover:underline mr-8">
-                Bollywood Awards 2026: Full winners list revealed
-              </Link>
+      <div className="bg-gradient-to-r from-indigo-50 via-purple-50 to-indigo-50 border-b border-indigo-100/50">
+        <div className="max-w-7xl mx-auto px-4 md:px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-2 h-2 bg-gradient-to-r from-red-500 to-pink-500 rounded-full animate-pulse"></div>
+              <span className="text-sm font-semibold text-indigo-700 uppercase tracking-wider">Breaking News</span>
+            </div>
+            <div className="flex-1 overflow-hidden">
+              <div className="flex space-x-8 animate-marquee">
+                <Link href="#" className="text-sm text-slate-600 hover:text-indigo-700 transition-colors duration-300 whitespace-nowrap">
+                  Election 2026: Latest updates from the campaign trail
+                </Link>
+                <Link href="#" className="text-sm text-slate-600 hover:text-indigo-700 transition-colors duration-300 whitespace-nowrap">
+                  Arjun Kumal makes history with fastest 1000 runs
+                </Link>
+                <Link href="#" className="text-sm text-slate-600 hover:text-indigo-700 transition-colors duration-300 whitespace-nowrap">
+                  Bollywood Awards 2026: Full winners list revealed
+                </Link>
+                <Link href="#" className="text-sm text-slate-600 hover:text-indigo-700 transition-colors duration-300 whitespace-nowrap">
+                  Election 2026: Latest updates from the campaign trail
+                </Link>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Hero Section with Featured Article */}
-      {featuredPost && (
-        <section className="relative">
-          <div className="grid lg:grid-cols-2 min-h-[85vh]">
-            {/* Image Side */}
-            <div className="relative h-[50vh] lg:h-auto">
-              {featuredPost.featuredImage ? (
-                <Image
-                  src={urlFor(featuredPost.featuredImage)
-                    .width(1200)
-                    .height(800)
-                    .auto('format')
-                    .quality(90)
-                    .url()}
-                  alt={featuredPost.title}
-                  fill
-                  priority
-                  className="object-cover"
-                  sizes="(max-width: 1024px) 100vw, 50vw"
-                />
-              ) : (
-                <div className="w-full h-full bg-gradient-to-br from-gray-800 to-gray-900" />
-              )}
-              <div className="absolute inset-0 bg-gradient-to-r from-black/60 lg:from-transparent" />
-            </div>
+      {/* Hero Section */}
+       {featuredPost && (
+        <section className="relative pt-20 pb-16">
+          <div className="max-w-7xl mx-auto px-4 lg:px-6">
+            <div className="grid lg:grid-cols-[45%_55%] gap-12 items-center">
+              {/* Image */}
+              <div className="hidden lg:block relative">
+                <div className="relative h-96 overflow-hidden rounded-3xl shadow-2xl shadow-indigo-500/10">
+                  {featuredPost.featuredImage ? (
+                    <Image
+                      src={urlFor(featuredPost.featuredImage)
+                        .width(800)
+                        .height(500)
+                        .auto('format')
+                        .quality(90)
+                        .url()}
+                      alt={featuredPost.title}
+                      width={800}
+                      height={500}
+                      className="w-full h-full object-cover hover:scale-105 transition-transform duration-700"
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-gradient-to-br from-slate-100 to-slate-200 rounded-3xl" />
+                  )}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent rounded-3xl" />
+                </div>
+                <div className="absolute -bottom-4 -right-4 w-24 h-24 bg-gradient-to-br from-indigo-400 to-purple-500 rounded-full opacity-20 animate-pulse"></div>
+              </div>
 
-            {/* Content Side */}
-            <div className="absolute lg:relative inset-0 lg:inset-auto flex items-center justify-center p-6 md:p-12 bg-news-dark lg:bg-white">
-              <div className="max-w-xl">
-                <div className="flex items-center gap-3 mb-4">
-                  <span className={`w-2 h-2 rounded-full animate-pulse ${getCategoryColor(featuredPost.category)}`} />
-                  <span className={`category-badge ${getCategoryStyle(featuredPost.category)}`}>
+              {/* Content */}
+              <div className="space-y-8 animate-fadeIn">
+                <div className="flex items-center gap-4">
+                  <div className="w-3 h-3 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-full animate-pulse"></div>
+                  <span className="text-sm font-bold uppercase tracking-widest text-slate-600">
                     {getCategoryLabel(featuredPost.category)}
                   </span>
                 </div>
 
                 <Link href={`/${featuredPost.slug.current}`}>
-                  <h1 className="text-2xl md:text-4xl lg:text-5xl font-heading font-bold text-white lg:text-news-dark leading-tight mb-4 hover:text-news-accent transition-colors">
+                  <h1 className="text-4xl md:text-5xl lg:text-6xl font-heading font-bold text-slate-900 mb-6 leading-tight hover:text-indigo-700 transition-colors duration-300">
                     {featuredPost.title}
                   </h1>
                 </Link>
 
                 {featuredPost.excerpt && (
-                  <p className="text-gray-300 lg:text-gray-600 text-base md:text-lg leading-relaxed mb-6 line-clamp-3">
+                  <p className="text-slate-600 text-lg leading-relaxed mb-8 line-clamp-4 max-w-2xl">
                     {featuredPost.excerpt}
                   </p>
                 )}
 
-                <div className="flex items-center gap-4 text-sm text-gray-400 lg:text-gray-500 mb-6">
-                  <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-6 text-sm text-slate-500">
+                  <div className="flex items-center gap-2">
                     <Calendar className="w-4 h-4" />
                     <time dateTime={featuredPost.publishedAt}>
                       {new Date(featuredPost.publishedAt).toLocaleDateString('en-US', {
@@ -157,19 +166,19 @@ export default async function Home() {
                       })}
                     </time>
                   </div>
-                  <span className="w-1 h-1 rounded-full bg-gray-400" />
-                  <div className="flex items-center gap-1.5">
+                  <div className="w-px h-4 bg-slate-300" />
+                  <div className="flex items-center gap-2">
                     <Clock className="w-4 h-4" />
                     <span>{Math.ceil(featuredPost.readTime || 5)} min read</span>
                   </div>
                 </div>
 
-                <Link 
+                <Link
                   href={`/${featuredPost.slug.current}`}
-                  className="inline-flex items-center gap-2 px-6 py-3 bg-news-accent hover:bg-news-accent-hover text-white font-semibold rounded-lg transition-colors"
+                  className="inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold rounded-2xl hover:from-indigo-700 hover:to-purple-700 shadow-xl shadow-indigo-500/25 hover:shadow-indigo-500/40 transition-all duration-300 hover:scale-105 hover:-translate-y-1"
                 >
-                  <Play className="w-4 h-4" fill="currentColor" />
                   Read Full Story
+                  <ChevronRight className="w-5 h-5" />
                 </Link>
               </div>
             </div>
@@ -177,269 +186,261 @@ export default async function Home() {
         </section>
       )}
 
-      {/* Editor's Pick Section */}
-      {editorPick && (
-        <section className="max-w-7xl mx-auto px-4 md:px-6 py-12 md:py-16">
-          <div className="flex items-center gap-3 mb-8">
-            <Star className="w-6 h-6 text-yellow-500" />
-            <h2 className="text-2xl md:text-3xl font-heading font-bold text-news-dark">
-              Editor&apos;s Pick
-            </h2>
-          </div>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <Link href={`/${editorPick.slug.current}`} className="md:col-span-2 group">
-              <article className="relative h-full min-h-[300px] rounded-2xl overflow-hidden">
-                {editorPick.featuredImage && (
-                  <Image
-                    src={urlFor(editorPick.featuredImage)
-                      .width(900)
-                      .height(500)
-                      .auto('format')
-                      .quality(85)
-                      .url()}
-                    alt={editorPick.title}
-                    fill
-                    className="object-cover group-hover:scale-105 transition-transform duration-500"
-                    sizes="(max-width: 768px) 100vw, 66vw"
-                  />
-                )}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-                <div className="absolute bottom-0 left-0 right-0 p-6">
-                  <span className="category-badge bg-yellow-500 text-white mb-3">
-                    EDITOR&apos;S PICK
-                  </span>
-                  <h3 className="text-xl md:text-2xl font-heading font-bold text-white mb-2">
-                    {editorPick.title}
-                  </h3>
-                  {editorPick.excerpt && (
-                    <p className="text-gray-300 text-sm line-clamp-2">
-                      {editorPick.excerpt}
-                    </p>
-                  )}
+      {/* Editor's Pick */}
+       {editorPick && (
+        <section className="py-20 bg-gradient-to-r from-slate-50 via-white to-slate-50">
+          <div className="max-w-7xl mx-auto px-4 lg:px-6">
+            <div className="flex items-center justify-between mb-12">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-gradient-to-br from-amber-400 to-orange-500 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-amber-500/25 animate-pulseGlow">
+                  <Star className="w-6 h-6" />
                 </div>
-              </article>
-            </Link>
+                <h2 className="text-3xl md:text-4xl font-heading font-bold text-slate-900">
+                  Editor&apos;s Pick
+                </h2>
+              </div>
+              <Link href="/editor-picks" className="text-sm font-semibold text-slate-600 hover:text-indigo-600 transition-all duration-300 hover:scale-105 flex items-center gap-2">
+                View All
+                <ChevronRight className="w-4 h-4" />
+              </Link>
+            </div>
 
-            <div className="space-y-4">
-              {posts.slice(1, 4).map((post) => (
-                <Link key={post._id} href={`/${post.slug.current}`} className="group block">
-                  <article className="flex gap-4 p-3 rounded-lg hover:bg-gray-50 transition-colors">
-                    <div className="w-20 h-20 relative flex-shrink-0 rounded-lg overflow-hidden">
-                      {post.featuredImage && (
-                        <Image
-                          src={urlFor(post.featuredImage)
-                            .width(200)
-                            .height(200)
-                            .auto('format')
-                            .quality(70)
-                            .url()}
-                          alt={post.title}
-                          fill
-                          className="object-cover"
-                          sizes="80px"
-                        />
-                      )}
-                    </div>
-                    <div>
-                      <span className={`category-badge text-[10px] ${getCategoryStyle(post.category)} mb-1`}>
-                        {getCategoryLabel(post.category)}
-                      </span>
-                      <h4 className="text-sm font-semibold text-news-dark group-hover:text-news-accent transition-colors line-clamp-2">
-                        {post.title}
-                      </h4>
-                    </div>
-                  </article>
-                </Link>
-              ))}
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+              <Link href={`/${editorPick.slug.current}`} className="group block">
+                <article className="relative overflow-hidden rounded-3xl shadow-2xl shadow-slate-900/10 hover:shadow-indigo-500/20 transition-all duration-500 group-hover:scale-105">
+                  {editorPick.featuredImage && (
+                    <Image
+                      src={urlFor(editorPick.featuredImage)
+                        .width(800)
+                        .height(400)
+                        .auto('format')
+                        .quality(85)
+                        .url()}
+                      alt={editorPick.title}
+                      width={800}
+                      height={400}
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                    />
+                  )}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
+                  <div className="absolute top-4 left-4">
+                    <span className="inline-block px-4 py-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs font-bold rounded-full shadow-lg">
+                      EDITOR&apos;S PICK
+                    </span>
+                  </div>
+                  <div className="absolute bottom-0 left-0 right-0 p-8">
+                    <h3 className="text-2xl md:text-3xl font-heading font-bold text-white mb-4 leading-tight">
+                      {editorPick.title}
+                    </h3>
+                    {editorPick.excerpt && (
+                      <p className="text-slate-200 text-base line-clamp-3 leading-relaxed">
+                        {editorPick.excerpt}
+                      </p>
+                    )}
+                  </div>
+                </article>
+              </Link>
+
+              <div className="space-y-6">
+                {posts.slice(1, 4).map((post, index) => (
+                  <Link key={post._id} href={`/${post.slug.current}`} className="group block" style={{animationDelay: `${index * 0.1}s`}}>
+                    <article className="flex gap-5 p-5 rounded-2xl bg-white/80 backdrop-blur-sm hover:bg-white/90 shadow-lg shadow-slate-900/5 hover:shadow-xl hover:shadow-indigo-500/10 transition-all duration-500 hover:scale-102 animate-scaleIn">
+                      <div className="w-20 h-20 relative flex-shrink-0 rounded-2xl overflow-hidden shadow-md">
+                        {post.featuredImage && (
+                          <Image
+                            src={urlFor(post.featuredImage)
+                              .width(150)
+                              .height(150)
+                              .auto('format')
+                              .quality(70)
+                              .url()}
+                            alt={post.title}
+                            fill
+                            className="object-cover group-hover:scale-110 transition-transform duration-500"
+                            sizes="96px"
+                          />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <span className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2 block">
+                          {getCategoryLabel(post.category)}
+                        </span>
+                        <h4 className="text-base font-semibold text-slate-900 group-hover:text-indigo-700 transition-colors duration-300 line-clamp-3 leading-tight">
+                          {post.title}
+                        </h4>
+                      </div>
+                    </article>
+                  </Link>
+                ))}
+              </div>
             </div>
           </div>
         </section>
       )}
 
-      {/* Latest Stories with Visual Grid */}
-      <section className="max-w-7xl mx-auto px-4 md:px-6 py-12 md:py-16 bg-gray-50 -mx-auto">
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-3">
-            <div className="w-1 h-8 bg-news-accent rounded-full" />
-            <h2 className="text-2xl md:text-3xl font-heading font-bold text-news-dark">
-              Latest Stories
-            </h2>
+      {/* Latest Stories */}
+      <section className="py-16">
+        <div className="max-w-7xl mx-auto px-4 lg:px-6">
+          <div className="flex items-center justify-between mb-12">
+            <div className="flex items-center gap-4">
+              <div className="w-2 h-12 bg-gradient-to-b from-indigo-500 to-purple-600 rounded-full shadow-lg shadow-indigo-500/25" />
+              <h2 className="text-3xl md:text-4xl font-heading font-bold text-slate-900">
+                Latest Stories
+              </h2>
+            </div>
+            <Link href="/category" className="text-sm font-semibold text-slate-600 hover:text-indigo-600 transition-all duration-300 hover:scale-105 flex items-center gap-2">
+              View All Stories
+              <ChevronRight className="w-4 h-4" />
+            </Link>
           </div>
-          <Link href="/category" className="hidden md:flex items-center gap-2 text-sm font-medium text-news-accent hover:text-news-accent-hover transition-colors">
-            View All Stories <ArrowRight className="w-4 h-4" />
-          </Link>
-        </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {latestPosts.map((post, index) => (
-            <article 
-              key={post._id} 
-              className={`bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1 ${
-                index === 0 ? 'md:col-span-2 md:row-span-2' : ''
-              }`}
-            >
-              <Link 
-                href={`/${post.slug.current}`}
-                className={`block relative overflow-hidden ${
-                  index === 0 ? 'aspect-[21/9]' : 'aspect-[16/10]'
-                }`}
-              >
-                {post.featuredImage && (
-                  <Image
-                    src={urlFor(post.featuredImage)
-                      .width(index === 0 ? 800 : 500)
-                      .height(index === 0 ? 350 : 300)
-                      .auto('format')
-                      .quality(80)
-                      .url()}
-                    alt={post.title}
-                    fill
-                    className="object-cover group-hover:scale-105 transition-transform duration-500"
-                    sizes={index === 0 ? '(max-width: 768px) 100vw, 50vw' : '(max-width: 768px) 100vw, 25vw'}
-                  />
-                )}
-                <div className="absolute top-3 left-3">
-                  <span className={`category-badge ${getCategoryStyle(post.category)} bg-white/90 backdrop-blur-sm`}>
-                    {getCategoryLabel(post.category)}
-                  </span>
-                </div>
-              </Link>
-
-              <CardContent className={`p-5 ${index === 0 ? 'p-6' : 'p-4'}`}>
-                <Link href={`/${post.slug.current}`}>
-                  <h3 className={`font-heading font-bold text-news-dark hover:text-news-accent transition-colors line-clamp-2 ${
-                    index === 0 ? 'text-xl md:text-2xl mb-3' : 'text-base mb-2'
-                  }`}>
-                    {post.title}
-                  </h3>
+          <div className="grid gap-8">
+            {latestPosts.map((post, index) => (
+              <article key={post._id} className="group bg-white/60 backdrop-blur-sm rounded-3xl shadow-lg shadow-slate-900/5 hover:shadow-xl hover:shadow-indigo-500/10 transition-all duration-500 hover:scale-102 overflow-hidden animate-slideUp" style={{animationDelay: `${index * 0.1}s`}}>
+                <Link href={`/${post.slug.current}`} className="block">
+                  <div className="relative overflow-hidden rounded-t-3xl">
+                    {post.featuredImage && (
+                      <Image
+                        src={urlFor(post.featuredImage)
+                          .width(index === 0 ? 800 : 400)
+                          .height(index === 0 ? 400 : 250)
+                          .auto('format')
+                          .quality(80)
+                          .url()}
+                        alt={post.title}
+                        fill
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                      />
+                    )}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
+                    <div className="absolute top-4 left-4">
+                      <span className="px-4 py-2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white text-xs font-bold rounded-full shadow-lg">
+                        {getCategoryLabel(post.category)}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="p-8">
+                    <Link href={`/${post.slug.current}`}>
+                      <h3 className={`mb-4 line-clamp-3 hover:text-indigo-700 transition-colors duration-300 ${
+                        index === 0 ? 'text-2xl md:text-3xl font-bold' : 'text-xl md:text-2xl font-semibold'
+                      } text-slate-900 leading-tight`}>
+                        {post.title}
+                      </h3>
+                    </Link>
+                    {post.excerpt && (
+                      <p className="text-slate-600 text-base line-clamp-4 mb-6 leading-relaxed">
+                        {post.excerpt}
+                      </p>
+                    )}
+                    <div className="flex items-center justify-between text-sm text-slate-500">
+                      <time dateTime={post.publishedAt}>
+                        {new Date(post.publishedAt).toLocaleDateString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                        })}
+                      </time>
+                      <span className="flex items-center gap-2">
+                        <Clock className="w-4 h-4" />
+                        {Math.ceil(post.readTime || 5)} min read
+                      </span>
+                    </div>
+                  </div>
                 </Link>
-                {post.excerpt && (
-                  <p className={`text-gray-600 leading-relaxed mb-4 ${
-                    index === 0 ? 'text-sm line-clamp-3' : 'text-xs line-clamp-2'
-                  }`}>
-                    {post.excerpt}
-                  </p>
-                )}
-                <div className="flex items-center justify-between text-xs text-gray-500 pt-3 border-t border-gray-100">
-                  <time dateTime={post.publishedAt}>
-                    {new Date(post.publishedAt).toLocaleDateString('en-US', {
-                      month: 'short',
-                      day: 'numeric',
-                    })}
-                  </time>
-                  <span className="flex items-center gap-1">
-                    <Clock className="w-3 h-3" />
-                    {Math.ceil(post.readTime || 5)} min
-                  </span>
-                </div>
-              </CardContent>
-            </article>
-          ))}
+              </article>
+            ))}
+          </div>
         </div>
       </section>
 
       {/* Quote/Highlight Section */}
-      <section className="max-w-7xl mx-auto px-4 md:px-6 py-16 md:py-20">
-        <div className="bg-news-dark rounded-2xl p-8 md:p-12 text-center">
-          <Quote className="w-12 h-12 text-news-accent mx-auto mb-6" />
-          <blockquote className="text-2xl md:text-4xl font-heading font-bold text-white leading-tight max-w-3xl mx-auto mb-6">
-            &ldquo;News is what somebody somewhere wants to suppress; everything else is advertising.&rdquo;
-          </blockquote>
-          <cite className="text-gray-400 text-lg">— Michael B. Jordan, Media critic</cite>
+      <section className="py-20 bg-gradient-to-r from-indigo-50 via-purple-50 to-indigo-50">
+        <div className="max-w-4xl mx-auto px-4 lg:px-6 text-center">
+          <div className="relative">
+            <Quote className="mx-auto h-16 mb-8 text-indigo-300 animate-float" />
+            <blockquote className="text-3xl md:text-4xl lg:text-5xl font-heading font-bold text-slate-900 mb-8 leading-tight animate-fadeIn">
+              &ldquo;News is what somebody somewhere wants to suppress; everything else is advertising.&rdquo;
+            </blockquote>
+            <p className="text-slate-600 text-lg font-medium">— Michael B. Jordan, Media critic</p>
+            <div className="absolute -top-8 -left-8 w-16 h-16 bg-gradient-to-br from-indigo-200 to-purple-200 rounded-full opacity-30 animate-pulse"></div>
+            <div className="absolute -bottom-8 -right-8 w-12 h-12 bg-gradient-to-br from-purple-200 to-pink-200 rounded-full opacity-30 animate-pulse" style={{animationDelay: '1s'}}></div>
+          </div>
         </div>
       </section>
 
-      {/* Trending Sidebar Style Section */}
-      <section className="max-w-7xl mx-auto px-4 md:px-6 py-12 md:py-16">
-        <div className="grid lg:grid-cols-12 gap-8">
-          <div className="lg:col-span-8">
-            <div className="flex items-center gap-3 mb-8">
-              <TrendingUp className="w-6 h-6 text-news-accent" />
-              <h2 className="text-2xl md:text-3xl font-heading font-bold text-news-dark">
+      {/* Trending Section */}
+      <section className="py-16 bg-gradient-to-br from-slate-50 to-white">
+        <div className="max-w-7xl mx-auto px-4 lg:px-6">
+          <div className="flex items-center justify-between mb-12">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-gradient-to-br from-red-500 to-pink-600 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-red-500/25 animate-pulseGlow">
+                <TrendingUp className="w-6 h-6" />
+              </div>
+              <h2 className="text-3xl md:text-4xl font-heading font-bold text-slate-900">
                 Trending Now
               </h2>
             </div>
-
-            <div className="space-y-4">
-              {trendingPosts.map((post, index) => (
-                <Link key={post._id} href={`/${post.slug.current}`} className="group">
-                  <article className="flex gap-6 p-4 rounded-xl hover:bg-gray-50 transition-colors">
-                    <span className="text-4xl font-heading font-bold text-gray-200 group-hover:text-news-accent transition-colors">
-                      {String(index + 1).padStart(2, '0')}
-                    </span>
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className={`w-1.5 h-1.5 rounded-full ${getCategoryColor(post.category)}`} />
-                        <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          {getCategoryLabel(post.category)}
-                        </span>
-                      </div>
-                      <h3 className="text-lg font-semibold text-news-dark group-hover:text-news-accent transition-colors">
-                        {post.title}
-                      </h3>
-                      {post.excerpt && (
-                        <p className="text-sm text-gray-500 mt-1 line-clamp-1">
-                          {post.excerpt}
-                        </p>
-                      )}
-                    </div>
-                    <ArrowRight className="w-5 h-5 text-gray-300 group-hover:text-news-accent group-hover:translate-x-1 transition-all self-center" />
-                  </article>
-                </Link>
-              ))}
-            </div>
+            <Link href="/trending" className="text-sm font-semibold text-slate-600 hover:text-indigo-600 transition-all duration-300 hover:scale-105 flex items-center gap-2">
+              View All
+              <ChevronRight className="w-4 h-4" />
+            </Link>
           </div>
 
-          {/* Newsletter Sidebar */}
-          <div className="lg:col-span-4">
-            <div className="sticky top-24 bg-gradient-to-br from-news-accent to-red-800 rounded-2xl p-6 md:p-8 text-white">
-              <div className="flex items-center gap-2 mb-4">
-                <Zap className="w-5 h-5" />
-                <span className="font-bold uppercase tracking-wider text-sm">Daily Briefing</span>
-              </div>
-              <h3 className="text-2xl font-heading font-bold mb-3">
-                Never Miss a Story
-              </h3>
-              <p className="text-white/80 text-sm mb-6">
-                Get the day&apos;s top headlines delivered to your inbox every morning.
-              </p>
-              <form className="space-y-3">
-                <input
-                  type="email"
-                  placeholder="Enter your email"
-                  className="w-full px-4 py-3 bg-white/15 border border-white/20 rounded-lg text-sm text-white placeholder:text-white/60 focus:outline-none focus:border-white focus:bg-white/20 transition-colors"
-                />
-                <button
-                  type="submit"
-                  className="w-full py-3 bg-white text-news-accent font-semibold rounded-lg hover:bg-gray-100 transition-colors"
-                >
-                  Subscribe Free
-                </button>
-              </form>
-              <p className="text-xs text-white/60 mt-4 text-center">
-                Already 10,000+ subscribers. No spam, ever.
-              </p>
-            </div>
+          <div className="grid gap-6">
+            {trendingPosts.map((post, index) => (
+              <article key={post._id} className="flex items-center gap-6 p-6 bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg shadow-slate-900/5 hover:shadow-xl hover:shadow-indigo-500/10 transition-all duration-500 hover:scale-102 animate-slideUp" style={{animationDelay: `${index * 0.1}s`}}>
+                <div className="flex-shrink-0 text-center">
+                  <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-purple-600 text-white rounded-xl flex items-center justify-center font-bold text-lg shadow-lg">
+                    {String(index + 1).padStart(2, '0')}
+                  </div>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <span className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2 block">
+                    {getCategoryLabel(post.category)}
+                  </span>
+                  <h3 className="mb-3 font-semibold text-slate-900 hover:text-indigo-700 transition-colors duration-300 line-clamp-2 text-lg leading-tight">
+                    {post.title}
+                  </h3>
+                  {post.excerpt && (
+                    <p className="text-slate-600 text-sm line-clamp-3 leading-relaxed">
+                      {post.excerpt}
+                    </p>
+                  )}
+                </div>
+              </article>
+            ))}
           </div>
         </div>
       </section>
 
       {/* Categories Quick Links */}
-      <section className="border-t border-gray-100">
-        <div className="max-w-7xl mx-auto px-4 md:px-6 py-8">
-          <div className="flex flex-wrap items-center justify-center gap-6 md:gap-8">
+      <section className="border-t border-slate-200/50 bg-gradient-to-br from-slate-50 to-slate-100">
+        <div className="max-w-7xl mx-auto px-4 md:px-6 py-16">
+          <div className="text-center mb-12">
+            <h3 className="text-2xl md:text-3xl font-heading font-bold text-slate-900 mb-4">
+              Explore Categories
+            </h3>
+            <p className="text-slate-600 text-lg max-w-2xl mx-auto">
+              Dive deep into stories that matter to you across our curated categories
+            </p>
+          </div>
+          <div className="grid md:grid-cols-3 gap-8">
             {[
-              { label: 'Sports', href: '/category/sports', color: 'text-orange-600' },
-              { label: 'Politics', href: '/category/politics', color: 'text-red-600' },
-              { label: 'Pop Culture', href: '/category/pop-culture', color: 'text-purple-600' },
-            ].map((category) => (
-              <Link 
+              { label: 'Sports', href: '/category/sports', gradient: 'from-emerald-400 to-teal-600', hover: 'hover:shadow-emerald-500/20' },
+              { label: 'Politics', href: '/category/politics', gradient: 'from-red-400 to-pink-600', hover: 'hover:shadow-red-500/20' },
+              { label: 'Pop Culture', href: '/category/pop-culture', gradient: 'from-purple-400 to-indigo-600', hover: 'hover:shadow-purple-500/20' },
+            ].map((category, index) => (
+              <Link
                 key={category.label}
                 href={category.href}
-                className={`text-lg font-medium hover:text-news-accent transition-colors ${category.color}`}
+                className={`group relative bg-white/80 backdrop-blur-sm rounded-3xl p-8 text-center shadow-lg shadow-slate-900/5 hover:shadow-2xl ${category.hover} transition-all duration-500 hover:-translate-y-2 overflow-hidden animate-scaleIn`}
+                style={{animationDelay: `${index * 0.2}s`}}
               >
-                {category.label}
+                <div className={`absolute inset-0 bg-gradient-to-br ${category.gradient} opacity-0 group-hover:opacity-5 transition-opacity duration-500`} />
+                <span className="relative text-2xl md:text-3xl font-bold text-slate-900 group-hover:text-slate-700 inline-block transition-all duration-300 group-hover:scale-110">
+                  {category.label}
+                </span>
+                <ChevronRight className="relative w-6 h-6 text-slate-400 group-hover:text-slate-600 ml-3 opacity-0 group-hover:opacity-100 group-hover:translate-x-2 transition-all duration-300 inline-block" />
+                <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-0 h-1 bg-gradient-to-r from-indigo-500 to-purple-600 group-hover:w-16 transition-all duration-500"></div>
               </Link>
             ))}
           </div>
@@ -448,9 +449,19 @@ export default async function Home() {
 
       {/* Empty State */}
       {posts.length === 0 && (
-        <div className="max-w-7xl mx-auto px-4 md:px-6 py-20 text-center">
-          <p className="text-2xl text-gray-500 mb-4">No stories yet.</p>
-          <p className="text-gray-400">Publish articles in Sanity Studio to get started!</p>
+        <div className="max-w-4xl mx-auto px-4 md:px-6 py-20 text-center">
+          <div className="relative">
+            <div className="w-24 h-24 bg-gradient-to-br from-slate-100 to-slate-200 rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-lg shadow-slate-900/10">
+              <Quote className="w-12 h-12 text-slate-400" />
+            </div>
+            <div className="absolute -top-4 -right-4 w-8 h-8 bg-gradient-to-br from-indigo-200 to-purple-200 rounded-full opacity-60 animate-pulse"></div>
+          </div>
+          <h3 className="text-3xl font-heading font-bold text-slate-900 mb-4">No stories yet.</h3>
+          <p className="text-slate-600 text-lg mb-6">Publish articles in Sanity Studio to get started!</p>
+          <div className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-semibold rounded-2xl shadow-lg shadow-indigo-500/25">
+            <TrendingUp className="w-5 h-5" />
+            Start Writing
+          </div>
         </div>
       )}
     </div>

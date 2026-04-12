@@ -38,6 +38,9 @@ export const metadata: Metadata = {
     index: true,
     follow: true,
   },
+  verification: {
+    google: "guCimrXiTfLDe5Y7IZl8mZWkVN097FQAHLoSHVoHjM8",
+  },
 };
 
 export default function RootLayout({
@@ -50,7 +53,7 @@ export default function RootLayout({
       lang="en"
       className={`${inter.variable} ${playfair.variable} ${jetbrains.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-[var(--news-bg)]">
+      <body className="min-h-full flex flex-col bg-[var(--background)] text-[var(--foreground)]">
         <Navbar />
         <main className="flex-1">
           {children}

@@ -13,9 +13,34 @@ interface Post {
   title: string
   slug: { current: string }
   category: string
-  featuredImage?: any
+  featuredImage?: {
+    _type: string
+    asset: {
+      _ref: string
+      _type: string
+    }
+    hotspot?: {
+      x: number
+      y: number
+      height: number
+      width: number
+    }
+  }
   excerpt?: string
-  body: any[]
+  body: {
+    _type: string
+    children: Array<{
+      _type: string
+      text: string
+      marks?: string[]
+    }>
+    markDefs?: Array<{
+      _key: string
+      _type: string
+      href?: string
+    }>
+    style?: string
+  }[]
   publishedAt: string
   seoTitle?: string
   seoDescription?: string

@@ -13,7 +13,7 @@ export function ShareButton({ title, url }: ShareButtonProps) {
     if (navigator.share) {
       try {
         await navigator.share({ title, url })
-      } catch (err) {
+      } catch {
         // User cancelled or error
       }
     } else {
@@ -23,11 +23,11 @@ export function ShareButton({ title, url }: ShareButtonProps) {
   }
 
   return (
-    <button 
+    <button
       onClick={handleShare}
-      className="flex items-center gap-2 text-sm text-gray-500 hover:text-news-dark transition-colors"
+      className="group flex items-center gap-3 px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 bg-white/80 hover:bg-white/90 border border-gray-200 hover:border-gray-300 rounded-full shadow-sm hover:shadow-md transition-all duration-300 ease-out hover:scale-105 active:scale-95 backdrop-blur-sm"
     >
-      <Share2 className="w-4 h-4" />
+      <Share2 className="w-4 h-4 transition-transform duration-300 group-hover:rotate-12" />
       Share
     </button>
   )
@@ -40,11 +40,11 @@ export function BookmarkButton() {
   }
 
   return (
-    <button 
+    <button
       onClick={handleSave}
-      className="flex items-center gap-2 text-sm text-gray-500 hover:text-news-dark transition-colors"
+      className="group flex items-center gap-3 px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 bg-white/80 hover:bg-white/90 border border-gray-200 hover:border-gray-300 rounded-full shadow-sm hover:shadow-md transition-all duration-300 ease-out hover:scale-105 active:scale-95 backdrop-blur-sm"
     >
-      <Bookmark className="w-4 h-4" />
+      <Bookmark className="w-4 h-4 transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-6" />
       Save
     </button>
   )
