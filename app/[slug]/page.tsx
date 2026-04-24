@@ -60,6 +60,21 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
 
   if (!post) notFound()
 
+  // Structured Data for SEO
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'NewsArticle',
+    headline: post.title,
+    description: post.seoDescription || post.excerpt,
+    image: post.featuredImage ? [urlFor(post.featuredImage).width(1200).url()] : [],
+    datePublished: post.publishedAt,
+    author: [{
+      '@type': 'Organization',
+      name: 'StatsUpdate',
+      url: 'https://statsupdate.vercel.app'
+    }]
+  }
+
   const publishedDate = new Date(post.publishedAt)
   const readingTime = Math.ceil((post.body?.length || 0) / 5) || 5
 
@@ -106,7 +121,12 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
   }
 
   return (
-    <article className="bg-white">
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <article className="bg-white">
       {/* Back Link */}
       <div className="border-b border-gray-100">
         <div className="max-w-4xl mx-auto px-4 md:px-6 py-4">
@@ -217,15 +237,28 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const post = await getPost(slug)
   if (!post) return {}
 
+  const metaTitle = post.seoTitle || post.title
+  const metaDesc = post.seoDescription || post.excerpt
+
   return {
-    title: post.seoTitle || post.title,
-    description: post.seoDescription || post.excerpt,
+    title: metaTitle,
+    description: metaDesc,
+    alternates: {
+      canonical: `/${post.slug.current}`,
+    },
     openGraph: {
-      title: post.seoTitle || post.title,
-      description: post.seoDescription || post.excerpt,
+      title: metaTitle,
+      description: metaDesc,
+      type: 'article',
+      publishedTime: post.publishedAt,
       images: post.featuredImage 
         ? [{ url: urlFor(post.featuredImage).width(1200).url() }] 
         : [],
     },
+    twitter: {
+      card: 'summary_large_image',
+      title: metaTitle,
+      description: metaDesc,
+    }
   }
 }

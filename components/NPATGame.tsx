@@ -82,6 +82,18 @@ export default function NPATGame({
     if (savedName) setPlayerName(savedName)
   }, [])
 
+  // Heartbeat and Live Sync of answers
+  useEffect(() => {
+    if (!isJoined || !gameId || !playerId || gameState?.status !== 'playing') return
+
+    const syncTimeout = setTimeout(async () => {
+      const currentAnswersRef = ref(database, `games/${gameId}/players/${playerId}/currentAnswers`)
+      await set(currentAnswersRef, answers)
+    }, 500) // Debounce sync
+
+    return () => clearTimeout(syncTimeout)
+  }, [answers, isJoined, gameId, playerId, gameState?.status])
+
   // Listen to game state changes
   useEffect(() => {
     if (!gameId) return
@@ -98,14 +110,16 @@ export default function NPATGame({
 
         setGameState(data)
         // Set host to the player who joined earliest
-        const sortedPlayers = Object.values(data.players || {}).sort((a: any, b: any) => a.joinedAt - b.joinedAt)
-        setIsHost(sortedPlayers[0]?.id === playerId)
+        const sortedPlayersArr = Object.values(data.players || {}).sort((a: any, b: any) => a.joinedAt - b.joinedAt)
+        setIsHost(sortedPlayersArr[0]?.id === playerId)
         
         // Automated transition to validation if all active players have submitted
-        if (data.status === 'playing' && data.players && data.answers) {
-          const activePlayerCount = Object.keys(data.players).length
-          const submissionCount = Object.keys(data.answers).length
-          if (activePlayerCount > 0 && submissionCount === activePlayerCount && isHost) {
+        // OR if someone "Stopped the Bus" (forced status change)
+        if (data.status === 'playing' && data.players && isHost) {
+          const activePlayers = Object.values(data.players) as Player[]
+          const allSubmitted = activePlayers.every(p => data.answers?.[p.id])
+          
+          if (allSubmitted) {
             transitionToValidation(data)
           }
         }
@@ -145,11 +159,21 @@ export default function NPATGame({
     const newScores = { ...(currentState.scores || {}) }
     const currentLetter = currentState.currentLetter.toUpperCase()
     
+    // Use currentAnswers for anyone who didn't submit yet (Stop the Bus case)
+    const players = currentState.players || {}
+    const finalAnswersToValidate: Record<string, RoundAnswers> = { ...allAnswers }
+    
+    Object.keys(players).forEach(pId => {
+      if (!finalAnswersToValidate[pId]) {
+        finalAnswersToValidate[pId] = (players[pId] as any).currentAnswers || { name: '', place: '', animal: '', thing: '' }
+      }
+    })
+
     // Helper to check duplicates
     const getOccurrences = (category: keyof RoundAnswers, value: string) => {
       if (!value) return 0
       const val = value.trim().toUpperCase()
-      return Object.values(allAnswers).filter(ans => ans[category]?.trim().toUpperCase() === val).length
+      return Object.values(finalAnswersToValidate).filter(ans => ans[category]?.trim().toUpperCase() === val).length
     }
 
     // Advanced Validation Logic using Active Server API + Local Fallback
@@ -158,78 +182,59 @@ export default function NPATGame({
       if (cleanWord.length < 2) return false
       if (!cleanWord.startsWith(currentLetter.toLowerCase())) return false
 
+      // 1. Step 1: Check Local Knowledge Base
+      const listKey = `${category}s` as keyof typeof GAME_DATA
+      const localList = GAME_DATA[listKey] || []
+      if (localList.some(item => item.toLowerCase() === cleanWord)) return true
+
+      // 2. Step 2: Check Active Server API
       try {
-        // 1. ACTIVE SEARCH: Hit our server-side API route
-        // This is the "official" verification that searches Wikipedia/Datamuse
         const res = await fetch('/api/validate', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ category, word, letter: currentLetter })
         })
-        
         if (res.ok) {
           const data = await res.json()
           if (data.isValid) return true
         }
-
-        // 2. FALLBACK: Local Check (if API rejected or failed)
-        const listKey = `${category}s` as keyof typeof GAME_DATA
-        const localList = GAME_DATA[listKey] || []
-        return localList.some(item => item.toLowerCase() === cleanWord)
-
       } catch (e) {
         console.warn(`Active validation failed for ${cleanWord}, using local fallback.`, e)
-        const listKey = `${category}s` as keyof typeof GAME_DATA
-        const localList = GAME_DATA[listKey] || []
-        return localList.some(item => item.toLowerCase() === cleanWord)
       }
+      return false
     }
 
     // Process each player's answers
     const playerResults: Record<string, Record<string, boolean>> = {}
     
-    for (const pId of Object.keys(currentState.players)) {
-      const pAns = allAnswers[pId]
-      if (!pAns) continue
-
+    for (const pId of Object.keys(players)) {
+      const pAns = finalAnswersToValidate[pId]
       playerResults[pId] = {}
       let roundScore = 0
 
       for (const cat of (['name', 'place', 'animal', 'thing'] as (keyof RoundAnswers)[])) {
         const val = (pAns[cat] || '').trim()
-        if (!val) {
+        if (!val || !val.toUpperCase().startsWith(currentLetter)) {
           playerResults[pId][cat] = false
           continue
         }
 
-        // 1. Basic check first
-        if (!val.toUpperCase().startsWith(currentLetter)) {
-          playerResults[pId][cat] = false
-          continue
-        }
-
-        // 2. Real-world validation (Call APIs)
         const isValid = await validateRealWorld(cat, val)
         playerResults[pId][cat] = isValid
 
         if (isValid) {
           const occurrences = getOccurrences(cat, val)
-          if (occurrences === 1) {
-            roundScore += 10
-          } else {
-            // Duplicate case
-            roundScore += 0
-          }
+          if (occurrences === 1) roundScore += 10
         }
       }
-      
       newScores[pId] = (newScores[pId] || 0) + roundScore
     }
 
     await update(ref(database, `games/${gameId}`), { 
       status: 'voting', 
       scores: newScores,
-      validation: playerResults // Store which words were accepted by the platform
+      validation: playerResults,
+      answers: finalAnswersToValidate // Store which words were accepted by the platform
     })
   }
 
@@ -326,11 +331,54 @@ export default function NPATGame({
   const submitAnswers = async () => {
     if (!gameState || !gameId) return
 
+    // 1. Perform 3-Step Validation (Active Search + Local) for the "Stop the Bus" trigger
+    const currentLetter = gameState.currentLetter.toUpperCase()
+    
+    const validateWithEngine = async (category: string, word: string) => {
+      const clean = word.trim()
+      if (!clean || !clean.toUpperCase().startsWith(currentLetter)) return false
+      
+      try {
+        const res = await fetch('/api/validate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ category, word: clean, letter: currentLetter })
+        })
+        if (res.ok) {
+          const data = await res.json()
+          return data.isValid
+        }
+      } catch (e) {
+        // Fallback for trigger purpose only
+        const list = GAME_DATA[`${category}s` as keyof typeof GAME_DATA] || []
+        return list.some(item => item.toLowerCase() === clean.toLowerCase())
+      }
+      return false
+    }
+
+    const [vName, vPlace, vAnimal, vThing] = await Promise.all([
+      validateWithEngine('name', answers.name),
+      validateWithEngine('place', answers.place),
+      validateWithEngine('animal', answers.animal),
+      validateWithEngine('thing', answers.thing)
+    ])
+
+    const allValid = vName && vPlace && vAnimal && vThing
+
+    // 2. Submit to Firebase
     const answersRef = ref(database, `games/${gameId}/answers/${playerId}`)
     await set(answersRef, {
       ...answers,
       submittedAt: Date.now()
     })
+
+    // 3. If "Stop the Bus" condition met (all 4 are actively validated), force end round
+    if (allValid) {
+       await update(ref(database, `games/${gameId}`), {
+          status: 'voting', 
+          busStoppedBy: playerName
+       })
+    }
   }
 
   const voteForAnswers = async (votedPlayerId: string) => {
