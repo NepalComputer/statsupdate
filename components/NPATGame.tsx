@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Timer, Users, Trophy, Send, CheckCircle2, AlertCircle, Sparkles, LogOut, ArrowRight, BrainCircuit } from 'lucide-react'
+import { GAME_DATA } from '@/lib/gameData'
 
 interface GameState {
   id: string
@@ -20,6 +21,7 @@ interface GameState {
   totalRounds: number
   answers: Record<string, RoundAnswers>
   scores: Record<string, number>
+  validation?: Record<string, Record<string, boolean>> // results of platform verification
   createdAt: number
 }
 
@@ -88,17 +90,23 @@ export default function NPATGame({
     const unsubscribe = onValue(gameRef, (snapshot) => {
       const data = snapshot.val()
       if (data) {
+        // Reset local answer inputs when a new round starts
+        if (gameState?.status !== 'playing' && data.status === 'playing') {
+          setAnswers({ name: '', place: '', animal: '', thing: '' })
+          setHasVotedInRound(false)
+        }
+
         setGameState(data)
         // Set host to the player who joined earliest
         const sortedPlayers = Object.values(data.players || {}).sort((a: any, b: any) => a.joinedAt - b.joinedAt)
         setIsHost(sortedPlayers[0]?.id === playerId)
         
-        // Automated transition to voting if all active players have submitted
+        // Automated transition to validation if all active players have submitted
         if (data.status === 'playing' && data.players && data.answers) {
           const activePlayerCount = Object.keys(data.players).length
           const submissionCount = Object.keys(data.answers).length
           if (activePlayerCount > 0 && submissionCount === activePlayerCount && isHost) {
-            update(gameRef, { status: 'voting' })
+            transitionToValidation(data)
           }
         }
       } else {
@@ -107,7 +115,7 @@ export default function NPATGame({
     })
 
     return () => off(gameRef)
-  }, [gameId, playerId, isHost])
+  }, [gameId, playerId, isHost, gameState?.status])
 
   // Timer management
   useEffect(() => {
@@ -121,14 +129,109 @@ export default function NPATGame({
         })
       }, 1000)
     } else if (gameState.timeLeft === 0 && gameState.status === 'playing') {
-      const gameRef = ref(database, `games/${gameId}`)
-      update(gameRef, { status: 'voting' })
+      transitionToValidation(gameState)
     }
 
     return () => {
       if (timerRef.current) clearInterval(timerRef.current)
     }
   }, [gameState?.timeLeft, gameState?.status, gameId, isHost])
+
+  const transitionToValidation = async (currentState: GameState) => {
+    if (!isHost || !gameId) return
+    
+    // Automated Scoring Logic with Real-World Validation
+    const allAnswers = currentState.answers || {}
+    const newScores = { ...(currentState.scores || {}) }
+    const currentLetter = currentState.currentLetter.toUpperCase()
+    
+    // Helper to check duplicates
+    const getOccurrences = (category: keyof RoundAnswers, value: string) => {
+      if (!value) return 0
+      const val = value.trim().toUpperCase()
+      return Object.values(allAnswers).filter(ans => ans[category]?.trim().toUpperCase() === val).length
+    }
+
+    // Advanced Validation Logic using Active Server API + Local Fallback
+    const validateRealWorld = async (category: string, word: string): Promise<boolean> => {
+      const cleanWord = word.trim().toLowerCase()
+      if (cleanWord.length < 2) return false
+      if (!cleanWord.startsWith(currentLetter.toLowerCase())) return false
+
+      try {
+        // 1. ACTIVE SEARCH: Hit our server-side API route
+        // This is the "official" verification that searches Wikipedia/Datamuse
+        const res = await fetch('/api/validate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ category, word, letter: currentLetter })
+        })
+        
+        if (res.ok) {
+          const data = await res.json()
+          if (data.isValid) return true
+        }
+
+        // 2. FALLBACK: Local Check (if API rejected or failed)
+        const listKey = `${category}s` as keyof typeof GAME_DATA
+        const localList = GAME_DATA[listKey] || []
+        return localList.some(item => item.toLowerCase() === cleanWord)
+
+      } catch (e) {
+        console.warn(`Active validation failed for ${cleanWord}, using local fallback.`, e)
+        const listKey = `${category}s` as keyof typeof GAME_DATA
+        const localList = GAME_DATA[listKey] || []
+        return localList.some(item => item.toLowerCase() === cleanWord)
+      }
+    }
+
+    // Process each player's answers
+    const playerResults: Record<string, Record<string, boolean>> = {}
+    
+    for (const pId of Object.keys(currentState.players)) {
+      const pAns = allAnswers[pId]
+      if (!pAns) continue
+
+      playerResults[pId] = {}
+      let roundScore = 0
+
+      for (const cat of (['name', 'place', 'animal', 'thing'] as (keyof RoundAnswers)[])) {
+        const val = (pAns[cat] || '').trim()
+        if (!val) {
+          playerResults[pId][cat] = false
+          continue
+        }
+
+        // 1. Basic check first
+        if (!val.toUpperCase().startsWith(currentLetter)) {
+          playerResults[pId][cat] = false
+          continue
+        }
+
+        // 2. Real-world validation (Call APIs)
+        const isValid = await validateRealWorld(cat, val)
+        playerResults[pId][cat] = isValid
+
+        if (isValid) {
+          const occurrences = getOccurrences(cat, val)
+          if (occurrences === 1) {
+            roundScore += 10
+          } else {
+            // Duplicate case
+            roundScore += 0
+          }
+        }
+      }
+      
+      newScores[pId] = (newScores[pId] || 0) + roundScore
+    }
+
+    await update(ref(database, `games/${gameId}`), { 
+      status: 'voting', 
+      scores: newScores,
+      validation: playerResults // Store which words were accepted by the platform
+    })
+  }
 
   const createGame = async () => {
     if (!playerName.trim() || !playerId) return
@@ -216,19 +319,12 @@ export default function NPATGame({
       timeLeft: roundTime,
       answers: {},
       currentRound: 1,
-      scores: gameState.scores || {}
+      scores: {} // Reset total scores when starting a completely new game
     })
   }
 
   const submitAnswers = async () => {
     if (!gameState || !gameId) return
-
-    const { currentLetter } = gameState
-    const isValid = (val: string) => val.trim().toUpperCase().startsWith(currentLetter.toUpperCase())
-    
-    if (!isValid(answers.name) || !isValid(answers.place) || !isValid(answers.animal) || !isValid(answers.thing)) {
-      // We allow submission but mark it for voting
-    }
 
     const answersRef = ref(database, `games/${gameId}/answers/${playerId}`)
     await set(answersRef, {
@@ -238,12 +334,9 @@ export default function NPATGame({
   }
 
   const voteForAnswers = async (votedPlayerId: string) => {
-    if (!gameState || !gameId || hasVotedInRound) return
-    
-    const scoresRef = ref(database, `games/${gameId}/scores/${votedPlayerId}`)
-    const currentScore = gameState.scores?.[votedPlayerId] || 0
-    await set(scoresRef, currentScore + 10) // 10 points per valid vote
-    setHasVotedInRound(true)
+    // Voting is now automated, but we could keep it for "Bonus" or "Overriding"
+    // For now, let's keep it disabled as requested "validated by our platform"
+    return
   }
 
   const nextRound = async () => {
@@ -256,7 +349,6 @@ export default function NPATGame({
     if (nextRoundNum > gameState.totalRounds) {
       await update(ref(database, `games/${gameId}`), { status: 'finished' })
     } else {
-      setHasVotedInRound(false)
       await update(ref(database, `games/${gameId}`), {
         status: 'playing',
         currentLetter: randomLetter,
@@ -278,6 +370,16 @@ export default function NPATGame({
   const isValidInput = (val: string) => {
     if (!gameState?.currentLetter || !val) return true
     return val.trim().toUpperCase().startsWith(gameState.currentLetter.toUpperCase())
+  }
+
+  // Helper for UI to show duplicate status
+  const getDuplicateStatus = (pId: string, category: keyof RoundAnswers) => {
+    if (!gameState?.answers) return false
+    const val = gameState.answers[pId]?.[category]?.trim().toUpperCase()
+    if (!val) return false
+    
+    const count = Object.values(gameState.answers).filter(ans => ans[category]?.trim().toUpperCase() === val).length
+    return count > 1
   }
 
   // Waiting Room UI
@@ -389,7 +491,7 @@ export default function NPATGame({
                 <Trophy className="w-6 h-6" />
               </div>
               <div>
-                <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Score</p>
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Total Pts</p>
                 <p className="text-xl font-heading font-bold text-slate-900">{gameState.scores?.[playerId] || 0} pts</p>
               </div>
            </CardContent>
@@ -486,6 +588,7 @@ export default function NPATGame({
                            value={answers[field.toLowerCase() as keyof RoundAnswers] as string}
                            onChange={(e) => setAnswers(prev => ({ ...prev, [field.toLowerCase()]: e.target.value }))}
                            placeholder={`${field} with ${gameState.currentLetter}...`}
+                           autoFocus={field === 'Name'}
                            className={`h-16 rounded-2xl text-xl bg-white/70 border-2 transition-all duration-300 focus:scale-[1.02] ${
                              answers[field.toLowerCase() as keyof RoundAnswers]
                              ? isValidInput(answers[field.toLowerCase() as keyof RoundAnswers] as string)
@@ -512,48 +615,65 @@ export default function NPATGame({
           {gameState.status === 'voting' && (
             <div className="space-y-8 animate-fadeIn">
                <div className="text-center space-y-2">
-                 <h2 className="text-3xl font-heading font-bold text-slate-900">Validation Phase</h2>
-                 <p className="text-slate-500">Review answers and vote for correct ones. Be fair!</p>
+                 <h2 className="text-3xl font-heading font-bold text-slate-900">Round Summary</h2>
+                 <p className="text-slate-500">Platform-validated scoring. Duplicate answers get 0 points.</p>
                </div>
 
                <div className="grid gap-6">
-                 {Object.entries(gameState.answers || {}).map(([pId, pAnswers]) => {
-                   if (pId === playerId) return null
-                   const p = gameState.players[pId]
+                 {players.map((p) => {
+                   const pAns = gameState.answers?.[p.id]
                    return (
-                     <Card key={pId} className="glass rounded-3xl border-white/50 overflow-hidden">
+                     <Card key={p.id} className={`glass rounded-3xl border-white/50 overflow-hidden ${p.id === playerId ? 'ring-2 ring-indigo-500 shadow-indigo-500/10' : ''}`}>
                         <CardHeader className="flex flex-row items-center justify-between border-b border-white/50 p-6 bg-white/30">
                            <div className="flex items-center gap-3">
-                             <div className="w-10 h-10 bg-gradient-to-br from-slate-200 to-slate-300 rounded-full flex items-center justify-center font-bold text-slate-700">
-                               {p?.name[0].toUpperCase()}
+                             <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center font-bold text-white">
+                               {p.name[0].toUpperCase()}
                              </div>
-                             <span className="font-bold text-lg text-slate-900">{p?.name}</span>
+                             <span className="font-bold text-lg text-slate-900">{p.name} {p.id === playerId && "(You)"}</span>
                            </div>
-                           <Badge className="bg-indigo-100 text-indigo-700 hover:bg-indigo-100 border-none">
-                             {gameState.scores?.[pId] || 0} Points
+                           <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100 border-none px-4 py-1 font-bold">
+                             Round Active
                            </Badge>
                         </CardHeader>
                         <CardContent className="p-6">
-                           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                             {['Name', 'Place', 'Animal', 'Thing'].map(f => (
-                               <div key={f} className="p-4 bg-white/60 rounded-2xl border border-white/80">
-                                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">{f}</span>
-                                  <span className="text-slate-800 font-bold truncate block">{(pAnswers as any)[f.toLowerCase()] || '-'}</span>
-                               </div>
-                             ))}
+                           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                             {['Name', 'Place', 'Animal', 'Thing'].map(f => {
+                               const cat = f.toLowerCase() as keyof RoundAnswers
+                               const val = pAns?.[cat] || '-'
+                               const isDuplicate = getDuplicateStatus(p.id, cat)
+                               const isPlatformValid = gameState.validation?.[p.id]?.[cat] ?? true
+                               const isCorrectLetter = (val as string).trim().toUpperCase().startsWith(gameState.currentLetter.toUpperCase())
+                               const isValidResult = isCorrectLetter && isPlatformValid && val !== '-'
+                               
+                               return (
+                                 <div key={f} className={`p-4 rounded-2xl border transition-all ${
+                                   isValidResult 
+                                     ? isDuplicate ? 'bg-amber-50 border-amber-200' : 'bg-emerald-50 border-emerald-200'
+                                     : 'bg-red-50 border-red-200 opacity-60'
+                                 }`}>
+                                    <div className="flex justify-between items-center mb-1">
+                                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{f}</span>
+                                      {isValidResult && !isDuplicate && <CheckCircle2 className="w-3 h-3 text-emerald-600" />}
+                                      {isValidResult && isDuplicate && <Users className="w-3 h-3 text-amber-600" />}
+                                      {!isValidResult && val !== '-' && <AlertCircle className="w-3 h-3 text-red-600" />}
+                                    </div>
+                                    <span className={`font-bold truncate block ${
+                                      isValidResult 
+                                        ? isDuplicate ? 'text-amber-700' : 'text-emerald-700'
+                                        : 'text-red-700'
+                                    }`}>{val}</span>
+                                    {isValidResult && isDuplicate && <span className="text-[9px] font-bold text-amber-500 uppercase leading-none">Duplicate (0)</span>}
+                                    {isValidResult && !isDuplicate && <span className="text-[9px] font-bold text-emerald-500 uppercase leading-none">+10 Pts</span>}
+                                    {!isValidResult && val !== '-' && (
+                                       <span className="text-[9px] font-bold text-red-500 uppercase leading-none">
+                                         {!isCorrectLetter ? 'Wrong Letter' : 'Fake Word'}
+                                       </span>
+                                    )}
+                                    {val === '-' && <span className="text-[9px] font-bold text-slate-400 uppercase leading-none">Missing</span>}
+                                 </div>
+                               )
+                             })}
                            </div>
-                           <Button 
-                             onClick={() => voteForAnswers(pId)}
-                             disabled={hasVotedInRound}
-                             className={`w-full h-12 rounded-xl font-bold transition-all ${
-                               hasVotedInRound 
-                               ? 'bg-slate-100 text-slate-400 cursor-not-allowed' 
-                               : 'bg-white border border-indigo-200 text-indigo-600 hover:bg-indigo-50'
-                             }`}
-                             variant="outline"
-                           >
-                             {hasVotedInRound ? 'Voted' : 'Accept Answers 👍'}
-                           </Button>
                         </CardContent>
                      </Card>
                    )
@@ -561,8 +681,9 @@ export default function NPATGame({
                </div>
 
                {isHost && (
-                 <Button onClick={nextRound} className="w-full h-16 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-bold text-lg shadow-xl shadow-amber-500/20">
-                    {gameState.currentRound >= gameState.totalRounds ? 'Final Results' : 'Start Next Round'}
+                 <Button onClick={nextRound} className="w-full h-16 rounded-2xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold text-xl shadow-xl shadow-indigo-500/20 group">
+                    {gameState.currentRound >= gameState.totalRounds ? 'See Final Leaderboard' : 'Start Next Round'}
+                    <ArrowRight className="ml-2 w-6 h-6 group-hover:translate-x-1" />
                  </Button>
                )}
             </div>
@@ -618,7 +739,7 @@ export default function NPATGame({
                           {p.id === playerId && " (You)"}
                         </span>
                      </div>
-                     {p.id === Object.values(gameState.players)[0]?.id && <Badge variant="secondary" className="text-[9px] h-4">Host</Badge>}
+                     {p.id === Object.values(gameState.players).sort((a,b)=>a.joinedAt-b.joinedAt)[0]?.id && <Badge variant="secondary" className="text-[9px] h-4">Host</Badge>}
                   </div>
                 ))}
              </CardContent>
@@ -636,8 +757,12 @@ export default function NPATGame({
           
           <div className="p-6 bg-indigo-600 rounded-3xl text-white shadow-xl shadow-indigo-500/20 relative overflow-hidden group">
              <div className="absolute top-0 right-0 p-8 transform translate-x-1/2 -translate-y-1/2 bg-white/10 rounded-full w-40 h-40 group-hover:scale-110 transition-transform" />
-             <h4 className="font-bold mb-2 relative">Pro Tip!</h4>
-             <p className="text-indigo-100 text-sm relative">Speed matters! The first person to submit puts pressure on everyone else as their timer keeps ticking.</p>
+             <h4 className="font-bold mb-2 relative">Scoring Rules</h4>
+             <ul className="text-indigo-100 text-sm relative space-y-1">
+                <li>• Correct & Unique: 10 pts</li>
+                <li>• Correct & Duplicate: 0 pts</li>
+                <li>• Wrong Letter: 0 pts</li>
+             </ul>
           </div>
         </div>
       </div>
