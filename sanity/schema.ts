@@ -67,6 +67,7 @@ export const schemaTypes: SchemaTypeDefinition[] = [
             { title: 'Sports', value: 'sports' },
             { title: 'Politics', value: 'politics' },
             { title: 'Pop Culture', value: 'pop-culture' },
+            { title: 'Games', value: 'games' },
           ],
         },
         validation: (Rule) => Rule.required(),
@@ -174,6 +175,75 @@ export const schemaTypes: SchemaTypeDefinition[] = [
           },
         ],
         validation: (Rule) => Rule.min(1),
+      },
+    ],
+  },
+
+  // Game Document - For Interactive Games
+  {
+    name: 'game',
+    title: 'Game',
+    type: 'document',
+    fields: [
+      {
+        name: 'title',
+        title: 'Game Title',
+        type: 'string',
+        validation: (Rule) => Rule.required(),
+      },
+      {
+        name: 'slug',
+        title: 'Slug',
+        type: 'slug',
+        options: { source: 'title', maxLength: 96 },
+        validation: (Rule) => Rule.required(),
+      },
+      {
+        name: 'gameType',
+        title: 'Game Type',
+        type: 'string',
+        options: {
+          list: [
+            { title: 'Name Place Animal Thing', value: 'npat' },
+            // Add more game types here as needed
+          ],
+        },
+        validation: (Rule) => Rule.required(),
+      },
+      {
+        name: 'description',
+        title: 'Description',
+        type: 'text',
+        rows: 4,
+      },
+      {
+        name: 'featuredImage',
+        title: 'Featured Image',
+        type: 'image',
+        options: { hotspot: true },
+      },
+      {
+        name: 'maxPlayers',
+        title: 'Maximum Players',
+        type: 'number',
+        validation: (Rule) => Rule.required().min(2).max(10),
+      },
+      {
+        name: 'roundTime',
+        title: 'Round Time (seconds)',
+        type: 'number',
+        validation: (Rule) => Rule.required().min(30).max(300),
+      },
+      {
+        name: 'isActive',
+        title: 'Is Active',
+        type: 'boolean',
+        initialValue: true,
+      },
+      {
+        name: 'publishedAt',
+        title: 'Published At',
+        type: 'datetime',
       },
     ],
   },

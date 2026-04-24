@@ -320,13 +320,11 @@ export default async function Home() {
                     </div>
                   </div>
                   <div className="p-8">
-                    <Link href={`/${post.slug.current}`}>
-                      <h3 className={`mb-4 line-clamp-3 hover:text-indigo-700 transition-colors duration-300 ${
-                        index === 0 ? 'text-2xl md:text-3xl font-bold' : 'text-xl md:text-2xl font-semibold'
-                      } text-slate-900 leading-tight`}>
-                        {post.title}
-                      </h3>
-                    </Link>
+                    <h3 className={`mb-4 line-clamp-3 hover:text-indigo-700 transition-colors duration-300 ${
+                      index === 0 ? 'text-2xl md:text-3xl font-bold' : 'text-xl md:text-2xl font-semibold'
+                    } text-slate-900 leading-tight`}>
+                      {post.title}
+                    </h3>
                     {post.excerpt && (
                       <p className="text-slate-600 text-base line-clamp-4 mb-6 leading-relaxed">
                         {post.excerpt}

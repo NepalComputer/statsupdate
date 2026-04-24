@@ -33,12 +33,12 @@ export default function SearchPage() {
 
     setLoading(true)
     const searchQuery = `*[_type == "post" && 
-      (title match "${searchTerm}*" || excerpt match "${searchTerm}*" || pt(body[]).children[].text match "${searchTerm}*")
+      (title match $searchTerm || excerpt match $searchTerm || body[].children[].text match $searchTerm)
     ] | order(publishedAt desc) [0...20] {
       _id, title, slug, category, excerpt, featuredImage, publishedAt
     }`
 
-    const data = await client.fetch<SearchResult[]>(searchQuery)
+    const data = await client.fetch<SearchResult[]>(searchQuery, { searchTerm: `${searchTerm}*` })
     setResults(data)
     setLoading(false)
   }, [])

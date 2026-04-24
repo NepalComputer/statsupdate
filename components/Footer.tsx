@@ -6,6 +6,7 @@ const categories = [
   { label: 'Sports', value: 'sports' },
   { label: 'Politics', value: 'politics' },
   { label: 'Pop Culture', value: 'pop-culture' },
+  { label: 'Games', value: 'games', isStatic: true },
 ]
 
 const company = [
@@ -67,7 +68,7 @@ export default function Footer() {
               {categories.map((cat) => (
                 <li key={cat.value}>
                   <Link
-                    href={`/category/${cat.value}`}
+                    href={cat.isStatic ? `/${cat.value}` : `/category/${cat.value}`}
                     className="text-slate-600 text-sm hover:text-indigo-600 hover:translate-x-2 inline-block transition-all duration-300 relative before:absolute before:bottom-0 before:left-0 before:w-0 before:h-0.5 before:bg-gradient-to-r before:from-indigo-500 before:to-purple-600 before:transition-all before:duration-300 hover:before:w-full"
                   >
                     {cat.label}

@@ -29,10 +29,12 @@ interface CategoryPost {
   publishedAt: string
 }
 
+
 const categoryLabels: Record<string, string> = {
   sports: 'Sports',
   politics: 'Politics',
   'pop-culture': 'Pop Culture',
+  games: 'Games',
 }
 
 async function getCategoryPosts(category: string): Promise<CategoryPost[]> {
@@ -43,29 +45,33 @@ async function getCategoryPosts(category: string): Promise<CategoryPost[]> {
   return client.fetch(query, { category }, { next: { revalidate: 60 } })
 }
 
+
 export default async function CategoryPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
-  const posts = await getCategoryPosts(slug)
   const categoryName = categoryLabels[slug] || slug
 
-  if (posts.length === 0) notFound()
+  const items = await getCategoryPosts(slug)
+
+  if (items.length === 0) notFound()
 
   return (
     <main className="min-h-screen bg-gray-50 py-12">
       <div className="max-w-6xl mx-auto px-6">
         <div className="mb-12">
           <h1 className="text-5xl font-bold tracking-tight">{categoryName}</h1>
-          <p className="text-xl text-gray-600 mt-3">Latest stories in {categoryName.toLowerCase()}</p>
+          <p className="text-xl text-gray-600 mt-3">
+            {isGamesCategory ? 'Interactive multiplayer games' : `Latest stories in ${categoryName.toLowerCase()}`}
+          </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {posts.map((post: CategoryPost) => (
-            <Card key={post._id} className="overflow-hidden hover:shadow-xl transition">
-              {post.featuredImage && (
+          {items.map((item) => (
+            <Card key={item._id} className="overflow-hidden hover:shadow-xl transition">
+              {item.featuredImage && (
                 <div className="relative aspect-[16/10]">
                   <Image
-                    src={urlFor(post.featuredImage).width(700).auto('format').url()}
-                    alt={post.title}
+                    src={urlFor(item.featuredImage).width(700).auto('format').url()}
+                    alt={item.title}
                     fill
                     className="object-cover"
                   />
@@ -73,12 +79,14 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
               )}
               <CardContent className="p-6">
                 <Badge className="mb-3">{categoryName}</Badge>
-                <Link href={`/${post.slug.current}`}>
+                <Link href={`/${item.slug.current}`}>
                   <h3 className="text-2xl font-semibold line-clamp-3 mb-4 hover:text-blue-600">
-                    {post.title}
+                    {item.title}
                   </h3>
                 </Link>
-                {post.excerpt && <p className="text-gray-600 line-clamp-3">{post.excerpt}</p>}
+                {item.excerpt && (
+                  <p className="text-gray-600 line-clamp-3">{item.excerpt}</p>
+                )}
               </CardContent>
             </Card>
           ))}
