@@ -1,4 +1,4 @@
-import { initializeApp } from 'firebase/app'
+import { initializeApp, getApps, getApp } from 'firebase/app'
 import { getDatabase } from 'firebase/database'
 
 const firebaseConfig = {
@@ -11,8 +11,6 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
   measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
 }
-
-import { initializeApp, getApps, getApp } from 'firebase/app'
 
 // Initialize Firebase safely (prevents Next.js HMR crashes)
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp()
