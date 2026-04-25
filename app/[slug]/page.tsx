@@ -71,7 +71,7 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
     author: [{
       '@type': 'Organization',
       name: 'StatsUpdate',
-      url: 'https://statsupdate.vercel.app'
+      url: 'https://statsupdate.com'
     }]
   }
 

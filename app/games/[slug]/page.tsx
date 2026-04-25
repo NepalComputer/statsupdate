@@ -66,9 +66,9 @@ export default async function GamePage({ params }: { params: Promise<{ slug: str
       '@context': 'https://schema.org',
       '@type': 'BreadcrumbList',
       itemListElement: [
-        { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://statsupdate.vercel.app' },
-        { '@type': 'ListItem', position: 2, name: 'Games', item: 'https://statsupdate.vercel.app/games' },
-        { '@type': 'ListItem', position: 3, name: game.title, item: `https://statsupdate.vercel.app/games/${slug}` }
+        { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://statsupdate.com' },
+        { '@type': 'ListItem', position: 2, name: 'Games', item: 'https://statsupdate.com/games' },
+        { '@type': 'ListItem', position: 3, name: game.title, item: `https://statsupdate.com/games/${slug}` }
       ]
     },
     {

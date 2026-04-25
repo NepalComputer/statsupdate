@@ -7,6 +7,6 @@ export default function robots(): MetadataRoute.Robots {
       allow: '/',
       disallow: ['/studio/'],
     },
-    sitemap: 'https://statsupdate.vercel.app/sitemap.xml',
+    sitemap: 'https://statsupdate.com/sitemap.xml',
   }
 }

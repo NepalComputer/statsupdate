@@ -3,7 +3,7 @@ import { MetadataRoute } from 'next'
 import { client } from '@/sanity/client'
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = 'https://statsupdate.vercel.app'
+  const baseUrl = 'https://statsupdate.com'
 
   // Fetch dynamic posts from Sanity
   const posts = await client.fetch(`*[_type == "post"] { slug, publishedAt }`)
