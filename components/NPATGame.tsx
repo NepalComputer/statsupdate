@@ -68,7 +68,7 @@ export default function NPATGame({
   
   // Timer and Heartbeat refs
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const timerRef = useRef<any>()
+  const timerRef = useRef<any>(null)
   
   useEffect(() => {
     const savedId = localStorage.getItem('npat_player_id')
@@ -110,7 +110,8 @@ export default function NPATGame({
 
         setGameState(data)
         // Set host to the player who joined earliest
-        const sortedPlayersArr = Object.values(data.players || {}).sort((a: any, b: any) => a.joinedAt - b.joinedAt)
+        const sortedPlayersArr = Object.values(data.players || {}) as Player[]
+        sortedPlayersArr.sort((a, b) => a.joinedAt - b.joinedAt)
         setIsHost(sortedPlayersArr[0]?.id === playerId)
         
         // Automated transition to validation if all active players have submitted
@@ -170,7 +171,7 @@ export default function NPATGame({
     })
 
     // Helper to check duplicates
-    const getOccurrences = (category: keyof RoundAnswers, value: string) => {
+    const getOccurrences = (category: 'name' | 'place' | 'animal' | 'thing', value: string) => {
       if (!value) return 0
       const val = value.trim().toUpperCase()
       return Object.values(finalAnswersToValidate).filter(ans => ans[category]?.trim().toUpperCase() === val).length
@@ -212,7 +213,7 @@ export default function NPATGame({
       playerResults[pId] = {}
       let roundScore = 0
 
-      for (const cat of (['name', 'place', 'animal', 'thing'] as (keyof RoundAnswers)[])) {
+      for (const cat of (['name', 'place', 'animal', 'thing'] as const)) {
         const val = (pAns[cat] || '').trim()
         if (!val || !val.toUpperCase().startsWith(currentLetter)) {
           playerResults[pId][cat] = false
@@ -421,12 +422,12 @@ export default function NPATGame({
   }
 
   // Helper for UI to show duplicate status
-  const getDuplicateStatus = (pId: string, category: keyof RoundAnswers) => {
+  const getDuplicateStatus = (pId: string, category: 'name' | 'place' | 'animal' | 'thing') => {
     if (!gameState?.answers) return false
-    const val = gameState.answers[pId]?.[category]?.trim().toUpperCase()
+    const val = (gameState.answers[pId]?.[category] as string | undefined)?.trim().toUpperCase()
     if (!val) return false
     
-    const count = Object.values(gameState.answers).filter(ans => ans[category]?.trim().toUpperCase() === val).length
+    const count = Object.values(gameState.answers).filter(ans => (ans[category] as string | undefined)?.trim().toUpperCase() === val).length
     return count > 1
   }
 
@@ -686,7 +687,7 @@ export default function NPATGame({
                         <CardContent className="p-6">
                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                              {['Name', 'Place', 'Animal', 'Thing'].map(f => {
-                               const cat = f.toLowerCase() as keyof RoundAnswers
+                               const cat = f.toLowerCase() as 'name' | 'place' | 'animal' | 'thing'
                                const val = pAns?.[cat] || '-'
                                const isDuplicate = getDuplicateStatus(p.id, cat)
                                const isPlatformValid = gameState.validation?.[p.id]?.[cat] ?? true

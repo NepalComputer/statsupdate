@@ -60,7 +60,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
         <div className="mb-12">
           <h1 className="text-5xl font-bold tracking-tight">{categoryName}</h1>
           <p className="text-xl text-gray-600 mt-3">
-            {isGamesCategory ? 'Interactive multiplayer games' : `Latest stories in ${categoryName.toLowerCase()}`}
+            Latest stories in {categoryName.toLowerCase()}
           </p>
         </div>
 

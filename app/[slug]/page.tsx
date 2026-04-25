@@ -229,7 +229,8 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
         </div>
       </div>
     </article>
-  )
+  </>
+)
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
