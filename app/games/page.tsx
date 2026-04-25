@@ -16,6 +16,15 @@ const ALL_GAMES = [
   }
 ]
 
+export const metadata = {
+  title: 'Multiplayer Games & Quizzes',
+  description: 'Challenge your friends in real-time multiplayer games like Name Place Animal Thing, and test your knowledge with interactive news quizzes.',
+  keywords: ['multiplayer games', 'online games with friends', 'news quizzes', 'name place animal thing'],
+  alternates: {
+    canonical: `/games`,
+  }
+}
+
 export default function GamesPage() {
   return (
     <main className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 py-24 relative overflow-hidden">

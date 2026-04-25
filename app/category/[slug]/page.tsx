@@ -46,6 +46,19 @@ async function getCategoryPosts(category: string): Promise<CategoryPost[]> {
 }
 
 
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params
+  const categoryName = categoryLabels[slug] || slug
+
+  return {
+    title: `${categoryName} News & Analytics`,
+    description: `Read the latest stories, breaking news, and in-depth analytics in ${categoryName.toLowerCase()} on StatsUpdate.`,
+    alternates: {
+      canonical: `/category/${slug}`,
+    }
+  }
+}
+
 export default async function CategoryPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
   const categoryName = categoryLabels[slug] || slug
