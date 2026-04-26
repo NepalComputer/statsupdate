@@ -39,8 +39,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     {
       url: `${baseUrl}/games/npat`,
       lastModified: new Date(),
-      changeFrequency: 'weekly' as const,
-      priority: 0.7,
+      changeFrequency: 'daily' as const,
+      priority: 1.0,
     }
   ]
 

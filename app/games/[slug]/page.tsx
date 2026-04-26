@@ -5,11 +5,11 @@ import { Badge } from '@/components/ui/badge'
 
 const GAMES_CONFIG: Record<string, { title: string; description: string; maxPlayers: number; roundTime: number; keywords: string[] }> = {
   npat: {
-    title: 'Name Place Animal Thing - Multiplayer Game',
-    description: 'Play the classic Name, Place, Animal, Thing game online with friends! Real-time multiplayer with automated platform validation and scoring.',
+    title: 'Play Name Place Animal Thing Online Multiplayer Game',
+    description: 'Play the classic Name Place Animal Thing game online with friends! Free real-time multiplayer with automated validation on StatsUpdate.',
     maxPlayers: 8,
     roundTime: 60,
-    keywords: ['NPAT', 'multiplayer game', 'word game', 'name place animal thing', 'online game with friends'],
+    keywords: ['name place animal thing', 'name place animal thing online', 'multiplayer name place animal thing', 'statsupdate name place animal thing', 'statsupdate', 'statsupdate.com', 'NPAT game', 'play word game online', 'friends game'],
   }
 }
 

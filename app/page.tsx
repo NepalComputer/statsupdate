@@ -421,11 +421,12 @@ export default async function Home() {
               Dive deep into stories that matter to you across our curated categories
             </p>
           </div>
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
             {[
               { label: 'Sports', href: '/category/sports', gradient: 'from-emerald-400 to-teal-600', hover: 'hover:shadow-emerald-500/20' },
               { label: 'Politics', href: '/category/politics', gradient: 'from-red-400 to-pink-600', hover: 'hover:shadow-red-500/20' },
               { label: 'Pop Culture', href: '/category/pop-culture', gradient: 'from-purple-400 to-indigo-600', hover: 'hover:shadow-purple-500/20' },
+              { label: 'Games', href: '/games', gradient: 'from-amber-400 to-orange-600', hover: 'hover:shadow-amber-500/20' },
             ].map((category, index) => (
               <Link
                 key={category.label}
