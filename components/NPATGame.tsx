@@ -515,45 +515,45 @@ export default function NPATGame({
   return (
     <div className="max-w-5xl mx-auto space-y-8 animate-fadeIn">
       {/* Game Header */}
-      <div className="grid md:grid-cols-3 gap-4">
-        <Card className="glass relative overflow-hidden rounded-3xl border-white/50">
-           <div className="absolute top-0 right-0 p-3">
+      <div className="grid grid-cols-3 gap-2 sm:gap-4 md:grid-cols-3">
+        <Card className="glass relative overflow-hidden rounded-2xl sm:rounded-3xl border-white/50">
+           <div className="absolute top-0 right-0 p-1 sm:p-3 hidden sm:block">
               <Badge variant="outline" className="bg-white/50 border-indigo-100 flex items-center gap-1">
                 <Users className="w-3 h-3" />
                 {players.length}
               </Badge>
            </div>
-           <CardContent className="p-6 flex items-center gap-4">
-              <div className="w-12 h-12 bg-indigo-100 rounded-2xl flex items-center justify-center text-indigo-600">
+           <CardContent className="p-3 sm:p-6 flex flex-col sm:flex-row items-center gap-1 sm:gap-4 justify-center text-center sm:text-left">
+              <div className="hidden sm:flex w-12 h-12 bg-indigo-100 rounded-2xl items-center justify-center text-indigo-600">
                 <BrainCircuit className="w-6 h-6" />
               </div>
               <div>
-                <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Game ID</p>
-                <p className="text-xl font-heading font-bold text-indigo-600 tracking-tighter">{gameId}</p>
+                <p className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-widest whitespace-nowrap">Game ID</p>
+                <p className="text-sm sm:text-xl font-heading font-bold text-indigo-600 tracking-tighter">{gameId}</p>
               </div>
            </CardContent>
         </Card>
 
-        <Card className="glass rounded-3xl border-white/50">
-           <CardContent className="p-6 flex items-center gap-4">
-              <div className="w-12 h-12 bg-amber-100 rounded-2xl flex items-center justify-center text-amber-600">
+        <Card className="glass rounded-2xl sm:rounded-3xl border-white/50">
+           <CardContent className="p-3 sm:p-6 flex flex-col sm:flex-row items-center gap-1 sm:gap-4 justify-center text-center sm:text-left">
+              <div className="hidden sm:flex w-12 h-12 bg-amber-100 rounded-2xl items-center justify-center text-amber-600">
                 <Trophy className="w-6 h-6" />
               </div>
               <div>
-                <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Total Pts</p>
-                <p className="text-xl font-heading font-bold text-slate-900">{gameState.scores?.[playerId] || 0} pts</p>
+                <p className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-widest whitespace-nowrap">Total Pts</p>
+                <p className="text-sm sm:text-xl font-heading font-bold text-slate-900">{gameState.scores?.[playerId] || 0}</p>
               </div>
            </CardContent>
         </Card>
 
-        <Card className="glass rounded-3xl border-white/50">
-           <CardContent className="p-6 flex items-center gap-4">
-              <div className="w-12 h-12 bg-red-100 rounded-2xl flex items-center justify-center text-red-600">
+        <Card className="glass rounded-2xl sm:rounded-3xl border-white/50">
+           <CardContent className="p-3 sm:p-6 flex flex-col sm:flex-row items-center gap-1 sm:gap-4 justify-center text-center sm:text-left">
+              <div className="hidden sm:flex w-12 h-12 bg-red-100 rounded-2xl items-center justify-center text-red-600">
                 <Timer className="w-6 h-6" />
               </div>
               <div>
-                <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Time Left</p>
-                <p className={`text-xl font-heading font-bold ${gameState.timeLeft < 10 ? 'text-red-500 animate-pulse' : 'text-slate-900'}`}>
+                <p className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-widest whitespace-nowrap">Time Left</p>
+                <p className={`text-sm sm:text-xl font-heading font-bold ${gameState.timeLeft < 10 ? 'text-red-500 animate-pulse' : 'text-slate-900'}`}>
                   {gameState.timeLeft}s
                 </p>
               </div>
@@ -601,13 +601,13 @@ export default function NPATGame({
 
           {gameState.status === 'playing' && (
             <div className="space-y-6 animate-slideUp">
-               <div className="flex items-center justify-between bg-white/50 p-6 rounded-3xl border border-white/80">
-                  <h3 className="text-2xl font-heading font-bold text-slate-900">
-                    Active Round: <span className="text-indigo-600 tracking-tighter">{gameState.currentRound}/{gameState.totalRounds}</span>
+               <div className="flex items-center justify-between bg-white/50 p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-white/80">
+                  <h3 className="text-xl sm:text-2xl font-heading font-bold text-slate-900">
+                    Round: <span className="text-indigo-600 tracking-tighter">{gameState.currentRound}/{gameState.totalRounds}</span>
                   </h3>
-                  <div className="flex items-center gap-3">
-                    <span className="text-sm font-bold text-slate-400 uppercase tracking-widest">Letter</span>
-                    <div className="w-16 h-16 bg-gradient-to-br from-indigo-600 to-purple-600 text-white rounded-2xl flex items-center justify-center text-4xl font-bold shadow-2xl shadow-indigo-500/40 animate-scaleIn">
+                  <div className="flex items-center gap-2 sm:gap-3">
+                    <span className="hidden sm:inline text-sm font-bold text-slate-400 uppercase tracking-widest">Letter</span>
+                    <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br from-indigo-600 to-purple-600 text-white rounded-xl sm:rounded-2xl flex items-center justify-center text-3xl sm:text-4xl font-bold shadow-xl shadow-indigo-500/40 animate-scaleIn">
                       {gameState.currentLetter}
                     </div>
                   </div>
@@ -622,23 +622,23 @@ export default function NPATGame({
                     <p className="text-slate-500">Waiting for other players to finish or the timer to run out.</p>
                  </Card>
                ) : (
-                 <div className="grid md:grid-cols-2 gap-6 pb-20">
+                 <div className="grid grid-cols-2 lg:grid-cols-2 gap-3 sm:gap-6 pb-20">
                     {['Name', 'Place', 'Animal', 'Thing'].map((field) => (
-                      <div key={field} className="space-y-2">
+                      <div key={field} className="space-y-1 sm:space-y-2">
                          <div className="flex justify-between items-center ml-1">
-                           <label className="text-sm font-bold text-slate-700 uppercase tracking-wider">{field}</label>
+                           <label className="text-xs sm:text-sm font-bold text-slate-700 uppercase tracking-wider">{field}</label>
                            {answers[field.toLowerCase() as keyof RoundAnswers] && (
                              isValidInput(answers[field.toLowerCase() as keyof RoundAnswers] as string) 
-                             ? <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                             : <AlertCircle className="w-4 h-4 text-red-500 animate-shake" />
+                             ? <CheckCircle2 className="w-3 h-3 sm:w-4 sm:h-4 text-emerald-500" />
+                             : <AlertCircle className="w-3 h-3 sm:w-4 sm:h-4 text-red-500 animate-shake" />
                            )}
                          </div>
                          <Input
                            value={answers[field.toLowerCase() as keyof RoundAnswers] as string}
                            onChange={(e) => setAnswers(prev => ({ ...prev, [field.toLowerCase()]: e.target.value }))}
-                           placeholder={`${field} with ${gameState.currentLetter}...`}
+                           placeholder={`Start with ${gameState.currentLetter}...`}
                            autoFocus={field === 'Name'}
-                           className={`h-16 rounded-2xl text-xl bg-white/70 border-2 transition-all duration-300 focus:scale-[1.02] ${
+                           className={`h-12 sm:h-16 rounded-xl sm:rounded-2xl text-base sm:text-xl bg-white/70 border-2 transition-all duration-300 focus:scale-[1.02] ${
                              answers[field.toLowerCase() as keyof RoundAnswers]
                              ? isValidInput(answers[field.toLowerCase() as keyof RoundAnswers] as string)
                                ? 'border-emerald-200 focus:border-emerald-500 focus:ring-emerald-500'
@@ -650,11 +650,11 @@ export default function NPATGame({
                     ))}
                     <Button 
                       onClick={submitAnswers}
-                      className="md:col-span-2 h-16 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xl shadow-xl shadow-indigo-500/30 group transition-all"
+                      className="col-span-2 h-14 sm:h-16 mt-2 rounded-xl sm:rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-lg sm:text-xl shadow-xl shadow-indigo-500/30 group transition-all"
                       disabled={!answers.name || !answers.place || !answers.animal || !answers.thing}
                     >
                       Lock In My Answers
-                      <Send className="ml-2 w-5 h-5 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
+                      <Send className="ml-2 w-4 h-4 sm:w-5 sm:h-5 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
                     </Button>
                  </div>
                )}
@@ -685,7 +685,7 @@ export default function NPATGame({
                            </Badge>
                         </CardHeader>
                         <CardContent className="p-6">
-                           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                           <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4">
                              {['Name', 'Place', 'Animal', 'Thing'].map(f => {
                                const cat = f.toLowerCase() as 'name' | 'place' | 'animal' | 'thing'
                                const val = pAns?.[cat] || '-'
@@ -695,7 +695,7 @@ export default function NPATGame({
                                const isValidResult = isCorrectLetter && isPlatformValid && val !== '-'
                                
                                return (
-                                 <div key={f} className={`p-4 rounded-2xl border transition-all ${
+                                 <div key={f} className={`p-2 sm:p-4 rounded-xl sm:rounded-2xl border transition-all ${
                                    isValidResult 
                                      ? isDuplicate ? 'bg-amber-50 border-amber-200' : 'bg-emerald-50 border-emerald-200'
                                      : 'bg-red-50 border-red-200 opacity-60'
@@ -711,7 +711,7 @@ export default function NPATGame({
                                         ? isDuplicate ? 'text-amber-700' : 'text-emerald-700'
                                         : 'text-red-700'
                                     }`}>{val}</span>
-                                    {isValidResult && isDuplicate && <span className="text-[9px] font-bold text-amber-500 uppercase leading-none">Duplicate (0)</span>}
+                                    {isValidResult && isDuplicate && <span className="text-[9px] font-bold text-amber-500 uppercase leading-none">Duplicate</span>}
                                     {isValidResult && !isDuplicate && <span className="text-[9px] font-bold text-emerald-500 uppercase leading-none">+10 Pts</span>}
                                     {!isValidResult && val !== '-' && (
                                        <span className="text-[9px] font-bold text-red-500 uppercase leading-none">
