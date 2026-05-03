@@ -530,7 +530,7 @@ export default function NPATGame({
 
             <div className="flex flex-col gap-3">
               <Button
-                onClick={gameId ? joinGame : createGame}
+                onClick={() => (gameId ? joinGame() : createGame())}
                 className={`h-14 rounded-2xl text-lg font-bold shadow-lg transition-all duration-300 ${
                    gameId 
                    ? 'bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-emerald-500/25'
