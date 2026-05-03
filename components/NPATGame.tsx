@@ -25,6 +25,7 @@ interface GameState {
   validation?: Record<string, Record<string, boolean>> // results of platform verification
   createdAt: number
   isPublic?: boolean
+  busStoppedBy?: string | null
 }
 
 interface Player {
