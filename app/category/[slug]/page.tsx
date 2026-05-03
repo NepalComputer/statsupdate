@@ -32,7 +32,7 @@ interface CategoryPost {
 
 const categoryLabels: Record<string, string> = {
   sports: 'Sports',
-  politics: 'Politics',
+  tech: 'Technology',
   'pop-culture': 'Pop Culture',
   games: 'Games',
 }

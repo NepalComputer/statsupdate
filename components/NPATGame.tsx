@@ -1,13 +1,14 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { ref, onValue, set, update, off, remove } from 'firebase/database'
+import { ref, onValue, get, set, update, off, remove } from 'firebase/database'
 import { database } from '@/lib/firebase'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Timer, Users, Trophy, Send, CheckCircle2, AlertCircle, Sparkles, LogOut, ArrowRight, BrainCircuit } from 'lucide-react'
+import { Timer, Users, Trophy, Send, CheckCircle2, AlertCircle, Sparkles, LogOut, ArrowRight, BrainCircuit, Globe, Lock, Unlock } from 'lucide-react'
+import { query, limitToLast } from 'firebase/database'
 import { GAME_DATA } from '@/lib/gameData'
 
 interface GameState {
@@ -23,6 +24,7 @@ interface GameState {
   scores: Record<string, number>
   validation?: Record<string, Record<string, boolean>> // results of platform verification
   createdAt: number
+  isPublic?: boolean
 }
 
 interface Player {
@@ -65,6 +67,8 @@ export default function NPATGame({
   const [isJoined, setIsJoined] = useState(false)
   const [isHost, setIsHost] = useState(false)
   const [hasVotedInRound, setHasVotedInRound] = useState(false)
+  const [isPublicRoom, setIsPublicRoom] = useState(true)
+  const [publicRooms, setPublicRooms] = useState<GameState[]>([])
   
   // Timer and Heartbeat refs
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -82,6 +86,31 @@ export default function NPATGame({
     if (savedName) setPlayerName(savedName)
   }, [])
 
+  // Listen for public rooms
+  useEffect(() => {
+    if (isJoined) return
+
+    const gamesRef = ref(database, 'games')
+    const recentGamesQuery = query(gamesRef, limitToLast(20))
+    
+    const unsubscribe = onValue(recentGamesQuery, (snapshot) => {
+      const data = snapshot.val()
+      if (data) {
+        const rooms = Object.values(data) as GameState[]
+        const activePublicRooms = rooms.filter(room => 
+          room.isPublic && 
+          room.status === 'waiting' && 
+          Object.keys(room.players || {}).length < maxPlayers
+        ).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))
+        setPublicRooms(activePublicRooms)
+      } else {
+        setPublicRooms([])
+      }
+    })
+
+    return () => off(gamesRef)
+  }, [isJoined, maxPlayers])
+
   // Heartbeat and Live Sync of answers
   useEffect(() => {
     if (!isJoined || !gameId || !playerId || gameState?.status !== 'playing') return
@@ -89,7 +118,7 @@ export default function NPATGame({
     const syncTimeout = setTimeout(async () => {
       const currentAnswersRef = ref(database, `games/${gameId}/players/${playerId}/currentAnswers`)
       await set(currentAnswersRef, answers)
-    }, 500) // Debounce sync
+    }, 200) // Debounce sync
 
     return () => clearTimeout(syncTimeout)
   }, [answers, isJoined, gameId, playerId, gameState?.status])
@@ -120,7 +149,7 @@ export default function NPATGame({
           const activePlayers = Object.values(data.players) as Player[]
           const allSubmitted = activePlayers.every(p => data.answers?.[p.id])
           
-          if (allSubmitted) {
+          if (allSubmitted || data.busStoppedBy) {
             transitionToValidation(data)
           }
         }
@@ -235,7 +264,8 @@ export default function NPATGame({
       status: 'voting', 
       scores: newScores,
       validation: playerResults,
-      answers: finalAnswersToValidate // Store which words were accepted by the platform
+      answers: finalAnswersToValidate, // Store which words were accepted by the platform
+      timeLeft: 0 // Ensure timer shows 0
     })
   }
 
@@ -266,7 +296,8 @@ export default function NPATGame({
         totalRounds: 3,
         answers: {},
         scores: {},
-        createdAt: Date.now()
+        createdAt: Date.now(),
+        isPublic: isPublicRoom
       }
 
       await set(gameRef, initialState)
@@ -278,16 +309,17 @@ export default function NPATGame({
     }
   }
 
-  const joinGame = async () => {
-    if (!playerName.trim() || !gameId || !playerId) return
+  const joinGame = async (overrideId?: string) => {
+    const idToJoin = overrideId || gameId
+    if (!playerName.trim() || !idToJoin || !playerId) return
     localStorage.setItem('npat_player_name', playerName)
 
     try {
-      const gameRef = ref(database, `games/${gameId}`)
-      const playerRef = ref(database, `games/${gameId}/players/${playerId}`)
+      const gameRef = ref(database, `games/${idToJoin}`)
+      const playerRef = ref(database, `games/${idToJoin}/players/${playerId}`)
       
-      const snapshot = await onValue(gameRef, (s) => s.val(), { onlyOnce: true })
-      if (!snapshot) {
+      const snapshot = await get(gameRef)
+      if (!snapshot.exists()) {
         alert("Game not found!")
         return
       }
@@ -325,7 +357,8 @@ export default function NPATGame({
       timeLeft: roundTime,
       answers: {},
       currentRound: 1,
-      scores: {} // Reset total scores when starting a completely new game
+      scores: {}, // Reset total scores when starting a completely new game
+      busStoppedBy: null
     })
   }
 
@@ -376,8 +409,8 @@ export default function NPATGame({
     // 3. If "Stop the Bus" condition met (all 4 are actively validated), force end round
     if (allValid) {
        await update(ref(database, `games/${gameId}`), {
-          status: 'voting', 
-          busStoppedBy: playerName
+          busStoppedBy: playerName,
+          timeLeft: 0
        })
     }
   }
@@ -403,7 +436,8 @@ export default function NPATGame({
         currentLetter: randomLetter,
         timeLeft: roundTime,
         currentRound: nextRoundNum,
-        answers: {}
+        answers: {},
+        busStoppedBy: null
       })
     }
   }
@@ -476,6 +510,24 @@ export default function NPATGame({
               </div>
             )}
 
+            <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
+               <div className="flex items-center gap-3">
+                  <div className={`p-2 rounded-lg ${isPublicRoom ? 'bg-emerald-100 text-emerald-600' : 'bg-amber-100 text-amber-600'}`}>
+                    {isPublicRoom ? <Globe className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-slate-700">{isPublicRoom ? 'Public Room' : 'Private Room'}</p>
+                    <p className="text-[10px] text-slate-500 font-medium">{isPublicRoom ? 'Anyone can join' : 'Only with Game ID'}</p>
+                  </div>
+               </div>
+               <button 
+                onClick={() => setIsPublicRoom(!isPublicRoom)}
+                className={`w-12 h-6 rounded-full transition-colors relative ${isPublicRoom ? 'bg-indigo-600' : 'bg-slate-300'}`}
+               >
+                 <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${isPublicRoom ? 'left-7' : 'left-1'}`} />
+               </button>
+            </div>
+
             <div className="flex flex-col gap-3">
               <Button
                 onClick={gameId ? joinGame : createGame}
@@ -492,6 +544,49 @@ export default function NPATGame({
             </div>
           </CardContent>
         </Card>
+
+        {publicRooms.length > 0 && (
+          <div className="space-y-4 animate-slideUp">
+            <h3 className="text-sm font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2 ml-1">
+              <Globe className="w-4 h-4 text-emerald-500" />
+              Live Public Rooms
+            </h3>
+            <div className="grid gap-3">
+              {publicRooms.map((room) => (
+                <div 
+                  key={room.id}
+                  onClick={() => {
+                    if (playerName.trim()) {
+                      joinGame(room.id)
+                    } else {
+                      setGameId(room.id)
+                      window.scrollTo({ top: 0, behavior: 'smooth' })
+                    }
+                  }}
+                  className="glass group p-4 rounded-2xl border-white/50 flex items-center justify-between hover:border-indigo-300 hover:bg-indigo-50/50 cursor-pointer transition-all duration-300"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center text-indigo-600 font-bold group-hover:scale-110 transition-transform">
+                      {room.id[0]}
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-slate-900">Room {room.id}</span>
+                        <Badge variant="outline" className="text-[10px] bg-emerald-50 text-emerald-600 border-emerald-100 py-0">
+                          Waiting
+                        </Badge>
+                      </div>
+                      <p className="text-xs text-slate-500 font-medium">
+                        {Object.keys(room.players || {}).length} players joined
+                      </p>
+                    </div>
+                  </div>
+                  <ArrowRight className="w-5 h-5 text-slate-300 group-hover:text-indigo-500 transition-colors" />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         <div className="text-center">
            <p className="text-slate-400 text-sm">Real-time multiplayer powered by StatsUpdate</p>
@@ -663,10 +758,16 @@ export default function NPATGame({
 
           {gameState.status === 'voting' && (
             <div className="space-y-8 animate-fadeIn">
-               <div className="text-center space-y-2">
-                 <h2 className="text-3xl font-heading font-bold text-slate-900">Round Summary</h2>
-                 <p className="text-slate-500">Platform-validated scoring. Duplicate answers get 0 points.</p>
-               </div>
+                <div className="text-center space-y-2">
+                  <h2 className="text-3xl font-heading font-bold text-slate-900">Round Summary</h2>
+                  <p className="text-slate-500">Platform-validated scoring. Duplicate answers get 0 points.</p>
+                  {gameState.busStoppedBy && (
+                    <Badge className="mt-2 bg-amber-100 text-amber-700 hover:bg-amber-100 border-amber-200 px-4 py-1.5 rounded-full text-sm font-bold flex items-center gap-2 mx-auto w-fit animate-bounce-subtle">
+                      <Timer className="w-4 h-4" />
+                      {gameState.busStoppedBy} Stopped the Bus!
+                    </Badge>
+                  )}
+                </div>
 
                <div className="grid gap-6">
                  {players.map((p) => {

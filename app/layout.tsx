@@ -24,6 +24,7 @@ const jetbrains = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://statsupdate.com'),
   title: {
     default: "StatsUpdate | Your Source for Breaking News",
     template: "%s | StatsUpdate",

@@ -1,9 +1,10 @@
-// app/page.tsx
 import { client } from '@/sanity/client'
 import Image from 'next/image'
 import Link from 'next/link'
 import { urlFor } from '@/lib/sanity'
-import { Calendar, Clock, Star, Quote, ChevronRight, TrendingUp } from 'lucide-react'
+import { Calendar, Clock, Star, Quote, ChevronRight, TrendingUp, Zap, Trophy, BrainCircuit, Gamepad2, ArrowRight } from 'lucide-react'
+import { Card } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
 
 interface Post {
   _id: string
@@ -11,39 +12,13 @@ interface Post {
   slug: { current: string }
   category: string
   excerpt?: string
-  featuredImage?: {
-    _type: string
-    asset: {
-      _ref: string
-      _type: string
-    }
-    hotspot?: {
-      x: number
-      y: number
-      height: number
-      width: number
-    }
-  }
+  featuredImage?: any
   publishedAt: string
-  body?: {
-    _type: string
-    children: Array<{
-      _type: string
-      text: string
-      marks?: string[]
-    }>
-    markDefs?: Array<{
-      _key: string
-      _type: string
-      href?: string
-    }>
-    style?: string
-  }[]
   readTime?: number
 }
 
 async function getPosts(): Promise<Post[]> {
-  const query = `*[_type == "post"] | order(publishedAt desc) [0...12] {
+  const query = `*[_type == "post"] | order(_createdAt desc) [0...6] {
     _id,
     title,
     slug,
@@ -51,6 +26,7 @@ async function getPosts(): Promise<Post[]> {
     excerpt,
     featuredImage,
     publishedAt,
+    _createdAt,
     "readTime": length(body) / 5
   }`
 
@@ -62,7 +38,7 @@ async function getPosts(): Promise<Post[]> {
 function getCategoryLabel(category: string): string {
   const labels: Record<string, string> = {
     sports: 'Sports',
-    politics: 'Politics',
+    tech: 'Technology',
     'pop-culture': 'Pop Culture',
   }
   return labels[category] || category
@@ -71,338 +47,171 @@ function getCategoryLabel(category: string): string {
 export default async function Home() {
   const posts = await getPosts()
   const featuredPost = posts[0]
-  const latestPosts = posts.slice(1, 7)
-  const trendingPosts = posts.slice(0, 4)
-  const editorPick = posts.find(p => p.category === 'politics') || posts[0]
+  const latestPosts = posts.slice(1, 5)
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-white">
-      {/* Breaking News Banner */}
-      <div className="bg-gradient-to-r from-indigo-50 via-purple-50 to-indigo-50 border-b border-indigo-100/50">
-        <div className="max-w-7xl mx-auto px-4 md:px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-2 h-2 bg-gradient-to-r from-red-500 to-pink-500 rounded-full animate-pulse"></div>
-              <span className="text-sm font-semibold text-indigo-700 uppercase tracking-wider">Breaking News</span>
-            </div>
-            <div className="flex-1 overflow-hidden">
-              <div className="flex space-x-8 animate-marquee">
-                <Link href="#" className="text-sm text-slate-600 hover:text-indigo-700 transition-colors duration-300 whitespace-nowrap">
-                  Election 2026: Latest updates from the campaign trail
-                </Link>
-                <Link href="#" className="text-sm text-slate-600 hover:text-indigo-700 transition-colors duration-300 whitespace-nowrap">
-                  Arjun Kumal makes history with fastest 1000 runs
-                </Link>
-                <Link href="#" className="text-sm text-slate-600 hover:text-indigo-700 transition-colors duration-300 whitespace-nowrap">
-                  Bollywood Awards 2026: Full winners list revealed
-                </Link>
-                <Link href="#" className="text-sm text-slate-600 hover:text-indigo-700 transition-colors duration-300 whitespace-nowrap">
-                  Election 2026: Latest updates from the campaign trail
-                </Link>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Hero Section */}
-       {featuredPost && (
-        <section className="relative pt-20 pb-16">
-          <div className="max-w-7xl mx-auto px-4 lg:px-6">
-            <div className="grid lg:grid-cols-[45%_55%] gap-12 items-center">
-              {/* Image */}
-              <div className="hidden lg:block relative">
-                <div className="relative h-96 overflow-hidden rounded-3xl shadow-2xl shadow-indigo-500/10">
-                  {featuredPost.featuredImage ? (
-                    <Image
-                      src={urlFor(featuredPost.featuredImage)
-                        .width(800)
-                        .height(500)
-                        .auto('format')
-                        .quality(90)
-                        .url()}
-                      alt={featuredPost.title}
-                      width={800}
-                      height={500}
-                      className="w-full h-full object-cover hover:scale-105 transition-transform duration-700"
-                    />
-                  ) : (
-                    <div className="w-full h-full bg-gradient-to-br from-slate-100 to-slate-200 rounded-3xl" />
-                  )}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent rounded-3xl" />
-                </div>
-                <div className="absolute -bottom-4 -right-4 w-24 h-24 bg-gradient-to-br from-indigo-400 to-purple-500 rounded-full opacity-20 animate-pulse"></div>
-              </div>
-
-              {/* Content */}
-              <div className="space-y-8 animate-fadeIn">
-                <div className="flex items-center gap-4">
-                  <div className="w-3 h-3 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-full animate-pulse"></div>
-                  <span className="text-sm font-bold uppercase tracking-widest text-slate-600">
-                    {getCategoryLabel(featuredPost.category)}
-                  </span>
-                </div>
-
-                <Link href={`/${featuredPost.slug.current}`}>
-                  <h1 className="text-4xl md:text-5xl lg:text-6xl font-heading font-bold text-slate-900 mb-6 leading-tight hover:text-indigo-700 transition-colors duration-300">
-                    {featuredPost.title}
-                  </h1>
-                </Link>
-
-                {featuredPost.excerpt && (
-                  <p className="text-slate-600 text-lg leading-relaxed mb-8 line-clamp-4 max-w-2xl">
-                    {featuredPost.excerpt}
-                  </p>
-                )}
-
-                <div className="flex items-center gap-6 text-sm text-slate-500">
-                  <div className="flex items-center gap-2">
-                    <Calendar className="w-4 h-4" />
-                    <time dateTime={featuredPost.publishedAt}>
-                      {new Date(featuredPost.publishedAt).toLocaleDateString('en-US', {
-                        month: 'short',
-                        day: 'numeric',
-                        year: 'numeric',
-                      })}
-                    </time>
-                  </div>
-                  <div className="w-px h-4 bg-slate-300" />
-                  <div className="flex items-center gap-2">
-                    <Clock className="w-4 h-4" />
-                    <span>{Math.ceil(featuredPost.readTime || 5)} min read</span>
-                  </div>
-                </div>
-
-                <Link
-                  href={`/${featuredPost.slug.current}`}
-                  className="inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold rounded-2xl hover:from-indigo-700 hover:to-purple-700 shadow-xl shadow-indigo-500/25 hover:shadow-indigo-500/40 transition-all duration-300 hover:scale-105 hover:-translate-y-1"
-                >
-                  Read Full Story
-                  <ChevronRight className="w-5 h-5" />
-                </Link>
-              </div>
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* Editor's Pick */}
-       {editorPick && (
-        <section className="py-20 bg-gradient-to-r from-slate-50 via-white to-slate-50">
-          <div className="max-w-7xl mx-auto px-4 lg:px-6">
-            <div className="flex items-center justify-between mb-12">
+    <div className="min-h-screen bg-white font-sans selection:bg-indigo-600 selection:text-white">
+      {/* Refined Editorial Hero Section */}
+      <section className="relative pt-24 pb-32 border-b border-slate-100">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="flex flex-col gap-16">
+            <div className="max-w-4xl space-y-8 animate-fadeIn">
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-gradient-to-br from-amber-400 to-orange-500 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-amber-500/25 animate-pulseGlow">
-                  <Star className="w-6 h-6" />
-                </div>
-                <h2 className="text-3xl md:text-4xl font-heading font-bold text-slate-900">
-                  Editor&apos;s Pick
-                </h2>
+                <span className="w-12 h-[1px] bg-indigo-600" />
+                <span className="text-[10px] font-black uppercase tracking-[0.4em] text-indigo-600">Established 2024</span>
               </div>
-              <Link href="/editor-picks" className="text-sm font-semibold text-slate-600 hover:text-indigo-600 transition-all duration-300 hover:scale-105 flex items-center gap-2">
-                View All
-                <ChevronRight className="w-4 h-4" />
-              </Link>
+              <h1 className="text-6xl md:text-8xl font-heading font-black tracking-tighter text-slate-900 leading-[0.95]">
+                REFINE YOUR <br />
+                <span className="text-slate-400">PERSPECTIVE.</span>
+              </h1>
+              <p className="text-xl md:text-2xl text-slate-500 font-medium max-w-2xl leading-relaxed">
+                A curated intersection of high-fidelity data, emerging technology, and global culture.
+              </p>
             </div>
 
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-              <Link href={`/${editorPick.slug.current}`} className="group block">
-                <article className="relative overflow-hidden rounded-3xl shadow-2xl shadow-slate-900/10 hover:shadow-indigo-500/20 transition-all duration-500 group-hover:scale-105">
-                  {editorPick.featuredImage && (
-                    <Image
-                      src={urlFor(editorPick.featuredImage)
-                        .width(800)
-                        .height(400)
-                        .auto('format')
-                        .quality(85)
-                        .url()}
-                      alt={editorPick.title}
-                      width={800}
-                      height={400}
-                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-                    />
-                  )}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
-                  <div className="absolute top-4 left-4">
-                    <span className="inline-block px-4 py-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs font-bold rounded-full shadow-lg">
-                      EDITOR&apos;S PICK
-                    </span>
-                  </div>
-                  <div className="absolute bottom-0 left-0 right-0 p-8">
-                    <h3 className="text-2xl md:text-3xl font-heading font-bold text-white mb-4 leading-tight">
-                      {editorPick.title}
-                    </h3>
-                    {editorPick.excerpt && (
-                      <p className="text-slate-200 text-base line-clamp-3 leading-relaxed">
-                        {editorPick.excerpt}
-                      </p>
-                    )}
-                  </div>
-                </article>
-              </Link>
-
-              <div className="space-y-6">
-                {posts.slice(1, 4).map((post, index) => (
-                  <Link key={post._id} href={`/${post.slug.current}`} className="group block" style={{animationDelay: `${index * 0.1}s`}}>
-                    <article className="flex gap-5 p-5 rounded-2xl bg-white/80 backdrop-blur-sm hover:bg-white/90 shadow-lg shadow-slate-900/5 hover:shadow-xl hover:shadow-indigo-500/10 transition-all duration-500 hover:scale-102 animate-scaleIn">
-                      <div className="w-20 h-20 relative flex-shrink-0 rounded-2xl overflow-hidden shadow-md">
-                        {post.featuredImage && (
-                          <Image
-                            src={urlFor(post.featuredImage)
-                              .width(150)
-                              .height(150)
-                              .auto('format')
-                              .quality(70)
-                              .url()}
-                            alt={post.title}
-                            fill
-                            className="object-cover group-hover:scale-110 transition-transform duration-500"
-                            sizes="96px"
-                          />
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <span className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2 block">
-                          {getCategoryLabel(post.category)}
-                        </span>
-                        <h4 className="text-base font-semibold text-slate-900 group-hover:text-indigo-700 transition-colors duration-300 line-clamp-3 leading-tight">
-                          {post.title}
-                        </h4>
-                      </div>
-                    </article>
-                  </Link>
-                ))}
-              </div>
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* Latest Stories */}
-      <section className="py-16">
-        <div className="max-w-7xl mx-auto px-4 lg:px-6">
-          <div className="flex items-center justify-between mb-12">
-            <div className="flex items-center gap-4">
-              <div className="w-2 h-12 bg-gradient-to-b from-indigo-500 to-purple-600 rounded-full shadow-lg shadow-indigo-500/25" />
-              <h2 className="text-3xl md:text-4xl font-heading font-bold text-slate-900">
-                Latest Stories
-              </h2>
-            </div>
-            <Link href="/category" className="text-sm font-semibold text-slate-600 hover:text-indigo-600 transition-all duration-300 hover:scale-105 flex items-center gap-2">
-              View All Stories
-              <ChevronRight className="w-4 h-4" />
-            </Link>
-          </div>
-
-          <div className="grid gap-8">
-            {latestPosts.map((post, index) => (
-              <article key={post._id} className="group bg-white/60 backdrop-blur-sm rounded-3xl shadow-lg shadow-slate-900/5 hover:shadow-xl hover:shadow-indigo-500/10 transition-all duration-500 hover:scale-102 overflow-hidden animate-slideUp" style={{animationDelay: `${index * 0.1}s`}}>
-                <Link href={`/${post.slug.current}`} className="block">
-                  <div className="relative overflow-hidden rounded-t-3xl">
-                    {post.featuredImage && (
+            <div className="grid lg:grid-cols-12 gap-12 items-start">
+              <div className="lg:col-span-8 group relative overflow-hidden rounded-2xl shadow-premium hover:shadow-hover transition-all duration-700">
+                <Link href={featuredPost ? `/${featuredPost.slug.current}` : '#'}>
+                  <div className="aspect-[16/9] relative overflow-hidden bg-slate-50">
+                    {featuredPost?.featuredImage && (
                       <Image
-                        src={urlFor(post.featuredImage)
-                          .width(index === 0 ? 800 : 400)
-                          .height(index === 0 ? 400 : 250)
-                          .auto('format')
-                          .quality(80)
-                          .url()}
-                        alt={post.title}
+                        src={urlFor(featuredPost.featuredImage).width(1200).height(675).url()}
+                        alt={featuredPost.title}
                         fill
-                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                        priority
+                        className="object-cover group-hover:scale-105 transition-transform duration-1000"
                       />
                     )}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
-                    <div className="absolute top-4 left-4">
-                      <span className="px-4 py-2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white text-xs font-bold rounded-full shadow-lg">
-                        {getCategoryLabel(post.category)}
-                      </span>
-                    </div>
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent opacity-60" />
                   </div>
-                  <div className="p-8">
-                    <h3 className={`mb-4 line-clamp-3 hover:text-indigo-700 transition-colors duration-300 ${
-                      index === 0 ? 'text-2xl md:text-3xl font-bold' : 'text-xl md:text-2xl font-semibold'
-                    } text-slate-900 leading-tight`}>
-                      {post.title}
-                    </h3>
-                    {post.excerpt && (
-                      <p className="text-slate-600 text-base line-clamp-4 mb-6 leading-relaxed">
-                        {post.excerpt}
-                      </p>
-                    )}
-                    <div className="flex items-center justify-between text-sm text-slate-500">
-                      <time dateTime={post.publishedAt}>
-                        {new Date(post.publishedAt).toLocaleDateString('en-US', {
-                          month: 'short',
-                          day: 'numeric',
-                        })}
-                      </time>
-                      <span className="flex items-center gap-2">
-                        <Clock className="w-4 h-4" />
-                        {Math.ceil(post.readTime || 5)} min read
-                      </span>
+                  <div className="absolute bottom-0 left-0 right-0 p-12 text-white">
+                    <div className="max-w-2xl space-y-4">
+                       <p className="text-[10px] font-black uppercase tracking-[0.3em] text-white/60">Top Story Today</p>
+                       <h2 className="text-3xl md:text-5xl font-heading font-black leading-tight group-hover:text-indigo-300 transition-colors">
+                         {featuredPost?.title}
+                       </h2>
                     </div>
                   </div>
                 </Link>
-              </article>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Quote/Highlight Section */}
-      <section className="py-20 bg-gradient-to-r from-indigo-50 via-purple-50 to-indigo-50">
-        <div className="max-w-4xl mx-auto px-4 lg:px-6 text-center">
-          <div className="relative">
-            <Quote className="mx-auto h-16 mb-8 text-indigo-300 animate-float" />
-            <blockquote className="text-3xl md:text-4xl lg:text-5xl font-heading font-bold text-slate-900 mb-8 leading-tight animate-fadeIn">
-              &ldquo;News is what somebody somewhere wants to suppress; everything else is advertising.&rdquo;
-            </blockquote>
-            <p className="text-slate-600 text-lg font-medium">— Michael B. Jordan, Media critic</p>
-            <div className="absolute -top-8 -left-8 w-16 h-16 bg-gradient-to-br from-indigo-200 to-purple-200 rounded-full opacity-30 animate-pulse"></div>
-            <div className="absolute -bottom-8 -right-8 w-12 h-12 bg-gradient-to-br from-purple-200 to-pink-200 rounded-full opacity-30 animate-pulse" style={{animationDelay: '1s'}}></div>
-          </div>
-        </div>
-      </section>
-
-      {/* Trending Section */}
-      <section className="py-16 bg-gradient-to-br from-slate-50 to-white">
-        <div className="max-w-7xl mx-auto px-4 lg:px-6">
-          <div className="flex items-center justify-between mb-12">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-gradient-to-br from-red-500 to-pink-600 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-red-500/25 animate-pulseGlow">
-                <TrendingUp className="w-6 h-6" />
               </div>
-              <h2 className="text-3xl md:text-4xl font-heading font-bold text-slate-900">
-                Trending Now
-              </h2>
+
+              <div className="lg:col-span-4 space-y-12">
+                <div className="p-8 bg-slate-50 rounded-2xl border border-slate-100 space-y-8">
+                  <h3 className="text-xs font-black uppercase tracking-widest text-slate-400">Discover More</h3>
+                  <div className="grid gap-6">
+                    {[
+                      { label: 'Technology', href: '/category/tech', desc: 'AI, Agents, and the Future.' },
+                      { label: 'Sports', href: '/category/sports', desc: 'Global stats and analytics.' },
+                      { label: 'Pop Culture', href: '/category/pop-culture', desc: 'The pulse of entertainment.' },
+                      { label: 'Games', href: '/games', desc: 'Competitive multiplayer arena.' }
+                    ].map((item) => (
+                      <Link key={item.label} href={item.href} className="group/item">
+                        <h4 className="text-sm font-black uppercase tracking-widest group-hover/item:text-indigo-600 transition-colors">{item.label}</h4>
+                        <p className="text-xs text-slate-500 font-medium mt-1">{item.desc}</p>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              </div>
             </div>
-            <Link href="/trending" className="text-sm font-semibold text-slate-600 hover:text-indigo-600 transition-all duration-300 hover:scale-105 flex items-center gap-2">
-              View All
-              <ChevronRight className="w-4 h-4" />
+          </div>
+        </div>
+      </section>
+
+      {/* Toned Down Arena Section */}
+      <section className="bg-slate-950 text-white py-32 overflow-hidden relative">
+        <div className="absolute inset-0 noise-bg opacity-5" />
+        <div className="max-w-7xl mx-auto px-6 relative z-10">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-8 mb-20">
+            <div className="space-y-4 text-center md:text-left">
+              <h2 className="text-5xl font-heading font-black tracking-tight">The Arena.</h2>
+              <p className="text-slate-400 font-medium">Competitive environments for the modern mind.</p>
+            </div>
+            <Link href="/games" className="px-8 py-3 bg-white/10 hover:bg-white/20 rounded-full text-xs font-black uppercase tracking-widest transition-all">
+              Launch Arena
             </Link>
           </div>
 
-          <div className="grid gap-6">
-            {trendingPosts.map((post, index) => (
-              <article key={post._id} className="flex items-center gap-6 p-6 bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg shadow-slate-900/5 hover:shadow-xl hover:shadow-indigo-500/10 transition-all duration-500 hover:scale-102 animate-slideUp" style={{animationDelay: `${index * 0.1}s`}}>
-                <div className="flex-shrink-0 text-center">
-                  <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-purple-600 text-white rounded-xl flex items-center justify-center font-bold text-lg shadow-lg">
-                    {String(index + 1).padStart(2, '0')}
+          <div className="grid md:grid-cols-2 gap-8">
+             {[
+              { 
+                title: 'WORD CHAIN', 
+                href: '/games/word-chain', 
+                desc: 'Competitive linguistics at scale.',
+                color: 'bg-white text-slate-950'
+              },
+              { 
+                title: 'NPAT ARENA', 
+                href: '/games/npat', 
+                desc: 'Real-time entity discovery engine.',
+                color: 'bg-slate-900 text-white border border-white/5'
+              }
+             ].map((game, i) => (
+               <Link key={i} href={game.href} className={`p-12 rounded-2xl group transition-all ${game.color} hover:scale-[1.02]`}>
+                  <div className="flex flex-col h-full space-y-12">
+                    <div className="flex justify-between items-start">
+                      <div className="w-12 h-12 rounded-xl bg-indigo-600/10 flex items-center justify-center text-indigo-500">
+                         <Zap className="w-6 h-6" />
+                      </div>
+                      <span className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40">Live Multiplayer</span>
+                    </div>
+                    <div className="space-y-2">
+                      <h3 className="text-3xl font-heading font-black tracking-tighter uppercase">{game.title}</h3>
+                      <p className="text-sm font-medium opacity-60 tracking-wide">{game.desc}</p>
+                    </div>
+                    <div className="flex items-center gap-4 text-xs font-black uppercase tracking-widest group-hover:gap-6 transition-all">
+                       <span>Connect</span>
+                       <ArrowRight className="w-4 h-4" />
+                    </div>
                   </div>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <span className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2 block">
-                    {getCategoryLabel(post.category)}
-                  </span>
-                  <h3 className="mb-3 font-semibold text-slate-900 hover:text-indigo-700 transition-colors duration-300 line-clamp-2 text-lg leading-tight">
-                    {post.title}
-                  </h3>
-                  {post.excerpt && (
-                    <p className="text-slate-600 text-sm line-clamp-3 leading-relaxed">
-                      {post.excerpt}
-                    </p>
+               </Link>
+             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Streamlined Content Stream */}
+      <section className="py-32 bg-white">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="flex items-center justify-between mb-20">
+            <h2 className="text-4xl font-heading font-black tracking-tight text-slate-900 uppercase">Latest Insights</h2>
+            <Link href="/category" className="text-xs font-black uppercase tracking-widest text-slate-400 hover:text-black transition-colors">
+              Explore All
+            </Link>
+          </div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {latestPosts.map((post) => (
+              <article key={post._id} className="group flex flex-col space-y-6">
+                <Link href={`/${post.slug.current}`} className="block overflow-hidden rounded-2xl bg-slate-50 aspect-[4/5] relative shadow-sm group-hover:shadow-premium transition-all duration-500">
+                  {post.featuredImage && (
+                    <Image
+                      src={urlFor(post.featuredImage).width(600).height(750).url()}
+                      alt={post.title}
+                      fill
+                      className="object-cover group-hover:scale-105 transition-transform duration-700"
+                    />
                   )}
+                  <div className="absolute top-4 left-4">
+                    <Badge className="bg-white/90 backdrop-blur-md text-slate-950 border-none rounded-lg px-3 py-1 font-black uppercase text-[8px] tracking-widest shadow-sm">
+                      {getCategoryLabel(post.category)}
+                    </Badge>
+                  </div>
+                </Link>
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                    <span>{new Date(post.publishedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+                    <span className="w-1 h-1 bg-slate-300 rounded-full" />
+                    <span>{Math.ceil(post.readTime || 5)} MIN READ</span>
+                  </div>
+                  <Link href={`/${post.slug.current}`}>
+                    <h3 className="text-xl font-heading font-black leading-tight text-slate-900 group-hover:text-indigo-600 transition-colors">
+                      {post.title}
+                    </h3>
+                  </Link>
+                  <p className="text-sm font-medium text-slate-500 line-clamp-3 leading-relaxed">
+                    {post.excerpt}
+                  </p>
                 </div>
               </article>
             ))}
@@ -410,59 +219,41 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* Categories Quick Links */}
-      <section className="border-t border-slate-200/50 bg-gradient-to-br from-slate-50 to-slate-100">
-        <div className="max-w-7xl mx-auto px-4 md:px-6 py-16">
-          <div className="text-center mb-12">
-            <h3 className="text-2xl md:text-3xl font-heading font-bold text-slate-900 mb-4">
-              Explore Categories
-            </h3>
-            <p className="text-slate-600 text-lg max-w-2xl mx-auto">
-              Dive deep into stories that matter to you across our curated categories
-            </p>
-          </div>
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {[
-              { label: 'Sports', href: '/category/sports', gradient: 'from-emerald-400 to-teal-600', hover: 'hover:shadow-emerald-500/20' },
-              { label: 'Politics', href: '/category/politics', gradient: 'from-red-400 to-pink-600', hover: 'hover:shadow-red-500/20' },
-              { label: 'Pop Culture', href: '/category/pop-culture', gradient: 'from-purple-400 to-indigo-600', hover: 'hover:shadow-purple-500/20' },
-              { label: 'Games', href: '/games', gradient: 'from-amber-400 to-orange-600', hover: 'hover:shadow-amber-500/20' },
-            ].map((category, index) => (
-              <Link
-                key={category.label}
-                href={category.href}
-                className={`group relative bg-white/80 backdrop-blur-sm rounded-3xl p-8 text-center shadow-lg shadow-slate-900/5 hover:shadow-2xl ${category.hover} transition-all duration-500 hover:-translate-y-2 overflow-hidden animate-scaleIn`}
-                style={{animationDelay: `${index * 0.2}s`}}
-              >
-                <div className={`absolute inset-0 bg-gradient-to-br ${category.gradient} opacity-0 group-hover:opacity-5 transition-opacity duration-500`} />
-                <span className="relative text-2xl md:text-3xl font-bold text-slate-900 group-hover:text-slate-700 inline-block transition-all duration-300 group-hover:scale-110">
-                  {category.label}
-                </span>
-                <ChevronRight className="relative w-6 h-6 text-slate-400 group-hover:text-slate-600 ml-3 opacity-0 group-hover:opacity-100 group-hover:translate-x-2 transition-all duration-300 inline-block" />
-                <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-0 h-1 bg-gradient-to-r from-indigo-500 to-purple-600 group-hover:w-16 transition-all duration-500"></div>
-              </Link>
-            ))}
+      {/* Subtler Quiz Section */}
+      <section className="py-24 bg-slate-50">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="grid lg:grid-cols-12 gap-16 items-center">
+            <div className="lg:col-span-5 space-y-6">
+               <h2 className="text-4xl font-heading font-black tracking-tight text-slate-900">Brain Trust.</h2>
+               <p className="text-lg font-medium text-slate-600 leading-relaxed">Engage with meticulously crafted challenges designed for the high-IQ community.</p>
+               <Link href="/quizzes" className="inline-flex items-center gap-4 px-8 py-3 bg-white rounded-full shadow-sm text-xs font-black uppercase tracking-widest border border-slate-100 hover:shadow-premium transition-all">
+                 Launch Hub <ArrowRight className="w-4 h-4" />
+               </Link>
+            </div>
+            <div className="lg:col-span-7 grid grid-cols-2 sm:grid-cols-4 gap-4">
+               {[
+                { label: 'Cricket IQ', icon: '🏏' },
+                { label: 'Movie Buff', icon: '🎬' },
+                { label: 'Tech Titan', icon: '💻' },
+                { label: 'History', icon: '🌍' },
+              ].map((q, i) => (
+                <Link key={i} href="/quizzes" className="bg-white p-8 rounded-2xl border border-slate-100 flex flex-col items-center justify-center space-y-4 hover:-translate-y-1 transition-all group">
+                   <span className="text-3xl grayscale group-hover:grayscale-0 transition-all">{q.icon}</span>
+                   <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 group-hover:text-slate-900 transition-colors">{q.label}</span>
+                </Link>
+              ))}
+            </div>
           </div>
         </div>
       </section>
-
-      {/* Empty State */}
-      {posts.length === 0 && (
-        <div className="max-w-4xl mx-auto px-4 md:px-6 py-20 text-center">
-          <div className="relative">
-            <div className="w-24 h-24 bg-gradient-to-br from-slate-100 to-slate-200 rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-lg shadow-slate-900/10">
-              <Quote className="w-12 h-12 text-slate-400" />
-            </div>
-            <div className="absolute -top-4 -right-4 w-8 h-8 bg-gradient-to-br from-indigo-200 to-purple-200 rounded-full opacity-60 animate-pulse"></div>
-          </div>
-          <h3 className="text-3xl font-heading font-bold text-slate-900 mb-4">No stories yet.</h3>
-          <p className="text-slate-600 text-lg mb-6">Publish articles in Sanity Studio to get started!</p>
-          <div className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-semibold rounded-2xl shadow-lg shadow-indigo-500/25">
-            <TrendingUp className="w-5 h-5" />
-            Start Writing
-          </div>
-        </div>
-      )}
     </div>
+  )
+}
+
+function Badge({ children, className }: { children: React.ReactNode, className?: string }) {
+  return (
+    <span className={`inline-flex items-center rounded-none border border-black px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 ${className}`}>
+      {children}
+    </span>
   )
 }

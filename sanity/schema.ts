@@ -65,7 +65,7 @@ export const schemaTypes: SchemaTypeDefinition[] = [
         options: {
           list: [
             { title: 'Sports', value: 'sports' },
-            { title: 'Politics', value: 'politics' },
+            { title: 'Technology', value: 'tech' },
             { title: 'Pop Culture', value: 'pop-culture' },
             { title: 'Games', value: 'games' },
           ],

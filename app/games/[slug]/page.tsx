@@ -1,4 +1,5 @@
 import NPATGame from '@/components/NPATGame'
+import WordChainGame from '@/components/WordChainGame'
 import { notFound } from 'next/navigation'
 import { Badge } from '@/components/ui/badge'
 
@@ -10,6 +11,13 @@ const GAMES_CONFIG: Record<string, { title: string; description: string; maxPlay
     maxPlayers: 8,
     roundTime: 60,
     keywords: ['name place animal thing', 'name place animal thing online', 'multiplayer name place animal thing', 'statsupdate name place animal thing', 'statsupdate', 'statsupdate.com', 'NPAT game', 'play word game online', 'friends game'],
+  },
+  'word-chain': {
+    title: 'Word Chain Online Multiplayer - Link the Words',
+    description: 'Challenge your friends in Word Chain! Link words starting with the last letter of the previous one. Fast-paced multiplayer word game on StatsUpdate.',
+    maxPlayers: 8,
+    roundTime: 15,
+    keywords: ['word chain', 'word chain online', 'multiplayer word chain', 'word link game', 'shiritori online', 'word game with friends', 'statsupdate games'],
   }
 }
 
@@ -19,6 +27,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   if (!game) return {}
 
   return {
+    metadataBase: new URL('https://statsupdate.com'),
     title: game.title,
     description: game.description,
     keywords: game.keywords,
@@ -95,7 +104,32 @@ export default async function GamePage({ params }: { params: Promise<{ slug: str
         {
           '@type': 'Question',
           name: 'Does the game have automated validation?',
-          acceptedAnswer: { '@type': 'Answer', text: 'Yes, the platform uses an active search engine to validate names, places, animals, and things in real-time.' }
+          acceptedAnswer: { '@type': 'Answer', text: 'Yes, the platform uses an active search engine leveraging Wikipedia and lexical databases to validate names, places, animals, and things in real-time.' }
+        },
+        {
+          '@type': 'Question',
+          name: 'Can I play NPAT on my mobile device?',
+          acceptedAnswer: { '@type': 'Answer', text: 'Absolutely! NPAT is fully responsive and optimized for both Android and iOS devices, so you can play on the go.' }
+        },
+        {
+          '@type': 'Question',
+          name: 'How many players can join a single game room?',
+          acceptedAnswer: { '@type': 'Answer', text: 'Currently, our rooms support up to 8 players for a balanced and exciting real-time experience.' }
+        },
+        {
+          '@type': 'Question',
+          name: 'What happens if two players submit the same answer?',
+          acceptedAnswer: { '@type': 'Answer', text: 'To encourage creativity, if two or more players submit the same valid answer, they both receive 0 points for that category. Only unique answers are rewarded!' }
+        },
+        {
+          '@type': 'Question',
+          name: 'Do I need to create an account to play?',
+          acceptedAnswer: { '@type': 'Answer', text: 'No registration is required. You can jump straight into the action by entering a nickname and joining or creating a room.' }
+        },
+        {
+          '@type': 'Question',
+          name: 'Can I create a private room to play only with my friends?',
+          acceptedAnswer: { '@type': 'Answer', text: 'Yes! You can toggle the "Private Room" option when hosting a game. Simply share the unique Game ID with your friends to let them join.' }
         }
       ]
     }
@@ -128,11 +162,17 @@ export default async function GamePage({ params }: { params: Promise<{ slug: str
         </div>
 
         <div className="animate-scaleIn">
-          <NPATGame
-            maxPlayers={game.maxPlayers}
-            roundTime={game.roundTime}
-            gameId={slug === 'npat' ? undefined : undefined} 
-          />
+          {slug === 'npat' ? (
+            <NPATGame
+              maxPlayers={game.maxPlayers}
+              roundTime={game.roundTime}
+            />
+          ) : (
+            <WordChainGame
+              maxPlayers={game.maxPlayers}
+              roundTime={game.roundTime}
+            />
+          )}
         </div>
 
         {/* Visual SEO Content: FAQ & How-To */}
@@ -142,19 +182,62 @@ export default async function GamePage({ params }: { params: Promise<{ slug: str
               <span className="w-8 h-8 rounded-lg bg-indigo-600 text-white flex items-center justify-center text-sm">?</span>
               Frequently Asked Questions
             </h2>
-            <div className="space-y-6">
-              <div className="glass p-6 rounded-3xl border border-white/20 shadow-sm">
-                <h3 className="font-bold text-slate-900 mb-2">Is {game.title} free to play?</h3>
-                <p className="text-slate-600 text-sm leading-relaxed">Yes, it is completely free to play on StatsUpdate. You can create or join rooms without any registration.</p>
-              </div>
-              <div className="glass p-6 rounded-3xl border border-white/20 shadow-sm">
-                <h3 className="font-bold text-slate-900 mb-2">Does the platform validate answers?</h3>
-                <p className="text-slate-600 text-sm leading-relaxed">Our advanced validation engine actively searches Wikipedia and lexical databases to ensure every submission is a real person, place, animal, or thing.</p>
-              </div>
-              <div className="glass p-6 rounded-3xl border border-white/20 shadow-sm">
-                <h3 className="font-bold text-slate-900 mb-2">What is the "Stop the Bus" rule?</h3>
-                <p className="text-slate-600 text-sm leading-relaxed">If a player submits four valid answers, the round instantly ends for everyone else. Speed is just as important as accuracy!</p>
-              </div>
+            <div className="space-y-4">
+              {slug === 'npat' ? (
+                <>
+                  <div className="glass p-6 rounded-3xl border border-white/20 shadow-sm hover:shadow-md transition-shadow">
+                    <h3 className="font-bold text-slate-900 mb-2">Is {game.title} free to play?</h3>
+                    <p className="text-slate-600 text-sm leading-relaxed">Yes, it is completely free to play on StatsUpdate. You can create or join rooms without any registration or hidden fees.</p>
+                  </div>
+                  <div className="glass p-6 rounded-3xl border border-white/20 shadow-sm hover:shadow-md transition-shadow">
+                    <h3 className="font-bold text-slate-900 mb-2">Does the platform validate answers?</h3>
+                    <p className="text-slate-600 text-sm leading-relaxed">Our advanced validation engine actively searches Wikipedia and lexical databases to ensure every submission is a real person, place, animal, or thing.</p>
+                  </div>
+                  <div className="glass p-6 rounded-3xl border border-white/20 shadow-sm hover:shadow-md transition-shadow">
+                    <h3 className="font-bold text-slate-900 mb-2">What is the "Stop the Bus" rule?</h3>
+                    <p className="text-slate-600 text-sm leading-relaxed">If a player submits four valid answers, the round instantly ends for everyone else. Speed is just as important as accuracy!</p>
+                  </div>
+                  <div className="glass p-6 rounded-3xl border border-white/20 shadow-sm hover:shadow-md transition-shadow">
+                    <h3 className="font-bold text-slate-900 mb-2">Can I play on my mobile phone?</h3>
+                    <p className="text-slate-600 text-sm leading-relaxed">Yes! The game is built using responsive design principles and works perfectly on smartphones and tablets.</p>
+                  </div>
+                  <div className="glass p-6 rounded-3xl border border-white/20 shadow-sm hover:shadow-md transition-shadow">
+                    <h3 className="font-bold text-slate-900 mb-2">How many players can join a room?</h3>
+                    <p className="text-slate-600 text-sm leading-relaxed">Rooms support up to 8 players. If you have more friends, you can split into multiple rooms and compete for the highest total score!</p>
+                  </div>
+                  <div className="glass p-6 rounded-3xl border border-white/20 shadow-sm hover:shadow-md transition-shadow">
+                    <h3 className="font-bold text-slate-900 mb-2">Why did I get 0 points for a valid answer?</h3>
+                    <p className="text-slate-600 text-sm leading-relaxed">In NPAT, if two or more players provide the same answer, both receive 0 points. Try to think of unique words to maximize your score!</p>
+                  </div>
+                  <div className="glass p-6 rounded-3xl border border-white/20 shadow-sm hover:shadow-md transition-shadow">
+                    <h3 className="font-bold text-slate-900 mb-2">How do I invite friends?</h3>
+                    <p className="text-slate-600 text-sm leading-relaxed">Once you create or join a room, simply copy the 5-digit Game ID from the dashboard and send it to your friends. They can enter it on the home page to join you.</p>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="glass p-6 rounded-3xl border border-white/20 shadow-sm hover:shadow-md transition-shadow">
+                    <h3 className="font-bold text-slate-900 mb-2">How do I play Word Chain?</h3>
+                    <p className="text-slate-600 text-sm leading-relaxed">Start with any word. The next player must provide a word that begins with the last letter of your word. The chain continues until someone runs out of time!</p>
+                  </div>
+                  <div className="glass p-6 rounded-3xl border border-white/20 shadow-sm hover:shadow-md transition-shadow">
+                    <h3 className="font-bold text-slate-900 mb-2">Can I use the same word twice?</h3>
+                    <p className="text-slate-600 text-sm leading-relaxed">No, repeated words are not allowed in the same round. This keeps the game challenging and forces players to be creative.</p>
+                  </div>
+                  <div className="glass p-6 rounded-3xl border border-white/20 shadow-sm hover:shadow-md transition-shadow">
+                    <h3 className="font-bold text-slate-900 mb-2">What happens if I run out of time?</h3>
+                    <p className="text-slate-600 text-sm leading-relaxed">If the timer reaches zero on your turn, you are eliminated from the round. The last player standing wins!</p>
+                  </div>
+                  <div className="glass p-6 rounded-3xl border border-white/20 shadow-sm hover:shadow-md transition-shadow">
+                    <h3 className="font-bold text-slate-900 mb-2">Are all words allowed?</h3>
+                    <p className="text-slate-600 text-sm leading-relaxed">We validate words using a real-time dictionary engine. Slang and very obscure terms might not be recognized, so stick to standard English words.</p>
+                  </div>
+                  <div className="glass p-6 rounded-3xl border border-white/20 shadow-sm hover:shadow-md transition-shadow">
+                    <h3 className="font-bold text-slate-900 mb-2">Is Word Chain multiplayer?</h3>
+                    <p className="text-slate-600 text-sm leading-relaxed">Yes! You can play with up to 8 friends in real-time. The game automatically manages turns and elimination.</p>
+                  </div>
+                </>
+              )}
             </div>
           </section>
 
@@ -164,20 +247,37 @@ export default async function GamePage({ params }: { params: Promise<{ slug: str
                How to Play
             </h2>
             <div className="relative space-y-8 before:absolute before:left-4 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-200">
-              {[
-                { step: "Join or Create", desc: "Start by entering your name and joining an existing room or creating a private one." },
-                { step: "Wait for Letter", desc: "A random letter will be generated at the start of each round." },
-                { step: "Fill Categories", desc: "Quickly type a Name, Place, Animal, and Thing starting with that letter." },
-                { step: "Submit or Stop", desc: "Submit all four valid answers to instantly end the round for others, or wait for the timer." }
-              ].map((item, idx) => (
-                <div key={idx} className="relative pl-12">
-                  <div className="absolute left-0 top-0 w-8 h-8 rounded-full bg-white border-2 border-slate-200 flex items-center justify-center text-xs font-bold text-slate-400 z-10">
-                    {idx + 1}
+              {slug === 'npat' ? (
+                [
+                  { step: "Join or Create", desc: "Start by entering your name and joining an existing room or creating a private one." },
+                  { step: "Wait for Letter", desc: "A random letter will be generated at the start of each round." },
+                  { step: "Fill Categories", desc: "Quickly type a Name, Place, Animal, and Thing starting with that letter." },
+                  { step: "Submit or Stop", desc: "Submit all four valid answers to instantly end the round for others, or wait for the timer." }
+                ].map((item, idx) => (
+                  <div key={idx} className="relative pl-12">
+                    <div className="absolute left-0 top-0 w-8 h-8 rounded-full bg-white border-2 border-slate-200 flex items-center justify-center text-xs font-bold text-slate-400 z-10">
+                      {idx + 1}
+                    </div>
+                    <h3 className="font-bold text-slate-900 mb-1">{item.step}</h3>
+                    <p className="text-slate-600 text-sm">{item.desc}</p>
                   </div>
-                  <h3 className="font-bold text-slate-900 mb-1">{item.step}</h3>
-                  <p className="text-slate-600 text-sm">{item.desc}</p>
-                </div>
-              ))}
+                ))
+              ) : (
+                [
+                  { step: "Get Your Turn", desc: "Wait for the previous player to submit a word. The chain begins with a random starter." },
+                  { step: "Link the Word", desc: "Type a word that starts with the LAST letter of the previous word." },
+                  { step: "Beat the Clock", desc: "You only have 15 seconds! Don't let the timer run out or you're eliminated." },
+                  { step: "Last One Standing", desc: "Survive the rounds as others get eliminated. The final player remaining wins the match." }
+                ].map((item, idx) => (
+                  <div key={idx} className="relative pl-12">
+                    <div className="absolute left-0 top-0 w-8 h-8 rounded-full bg-white border-2 border-slate-200 flex items-center justify-center text-xs font-bold text-slate-400 z-10">
+                      {idx + 1}
+                    </div>
+                    <h3 className="font-bold text-slate-900 mb-1">{item.step}</h3>
+                    <p className="text-slate-600 text-sm">{item.desc}</p>
+                  </div>
+                ))
+              )}
             </div>
           </section>
         </div>

@@ -15,7 +15,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.8,
   }))
 
-  const categories = ['sports', 'politics', 'pop-culture']
+  const categories = ['sports', 'tech', 'pop-culture']
   const categoryUrls = categories.map((cat) => ({
     url: `${baseUrl}/category/${cat}`,
     lastModified: new Date(),

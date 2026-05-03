@@ -13,6 +13,15 @@ const ALL_GAMES = [
     maxPlayers: 8,
     roundTime: 60,
     icon: <Trophy className="w-8 h-8 text-amber-500" />
+  },
+  {
+    id: 'word-chain',
+    title: 'Word Chain',
+    description: 'The ultimate link-up! Start with a word, and the next player must use its last letter for their next word. Don\'t break the chain!',
+    slug: 'word-chain',
+    maxPlayers: 8,
+    roundTime: 15,
+    icon: <ArrowRight className="w-8 h-8 text-indigo-500" />
   }
 ]
 
